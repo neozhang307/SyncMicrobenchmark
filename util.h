@@ -27,26 +27,7 @@ struct latencys
 #define LATS
 #endif
 // #ifndef DEBUG
-// #define  checkCudaErrors(err)\
-// {	\
-//   cudaError_t e=err;\
-// 	if(e!=cudaSuccess) {        \
-// 		char str[100];\
-//    		sprintf(str,"Cuda failure %s:%d: '%s'",__FILE__,__LINE__,cudaGetErrorString(e));\
-//    		throw str;\
-// 	}\
-// }
 
-// #endif
-// #ifdef DEBUG
-// #define  checkCudaErrors(err)\
-// {	\
-//   cudaError_t e=err;\
-// 	if(e!=cudaSuccess) {        \
-//     printf("Cuda failure %s:%d: '%s'\n",__FILE__,__LINE__,cudaGetErrorString(e));\
-// 	}\
-// }
-// #endif
 unsigned long ToUInt(char* str);
 char* genFileName(char* filename, const char *  base,  const char *  deviceName);
 // char* addDir(char* baseDir, const char *  addDir);
@@ -59,6 +40,12 @@ void getIdenticalGPUs(int num_of_gpus, std::set<int> &identicalGPUs, bool coalau
 */
 
 void showlatency(latencys* g_result);
+void prepare_showAdditionalLatency();
+void showAdditionalLatency(latencys *result, const char* funcname, 
+  unsigned int gpu_count,
+  unsigned int block_perGPU, unsigned int thread_perBlock, 
+  unsigned int basicDEP, unsigned int moreDEP);
+
 double computeAddLat(latencys* g_result, unsigned int difference);
 double computeAddLats(latencys* g_result, unsigned int difference);//size=2
 void nxtline();

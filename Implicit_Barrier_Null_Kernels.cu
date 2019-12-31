@@ -4,6 +4,7 @@
 #include "util.h"
 #include "measurement.cuh"
 
+#include <string.h>
 #include <stdio.h>
 
 
@@ -13,13 +14,10 @@ __global__ void null_kernel(){}
 //In order to reduce overhead, we use repeat MACRO instead of forloop here. 
 //The inconvenience part is that when we need to test overhead, we would need to introduce additional MACRO
 #define NULL_KERNEL_TEST(callfunc, basicDEP, moreDEP, gpu_count) \
-	printf("method\tGPUcount\trep\tblk\tthrd\tm(clk)\ts(clk)\tm(sync)\ts(sync)\tm(laun)\ts(laun)\tm(ttl)\ts(ttl)\tm(avelaun)\ts(avelaun)\tm(addl)\ts(addl)\n");\
 	measureLatencys<gpu_count>(result, callfunc##_##basicDEP, null_kernel,block_perGPU,thread_perBlock);\
-	printf("%s\t%s\t%s\t%u\t%u\t",#callfunc,#gpu_count,#basicDEP,block_perGPU,thread_perBlock);\
-	showlatency(result);printf("%f\t%f\t",result[0].mean_laun/basicDEP,result[0].s_laun/basicDEP);nxtline();\
 	measureLatencys<gpu_count>(result+1, callfunc##_##moreDEP, null_kernel,block_perGPU,thread_perBlock);\
-	printf("%s\t%s\t%s\t%u\t%u\t",#callfunc,#gpu_count,#moreDEP,block_perGPU,thread_perBlock);\
-	showlatency(result+1);printf("%f\t%f\t",result[1].mean_laun/moreDEP,result[1].s_laun/moreDEP);printf("%f\t%f\t",computeAddLat(result,moreDEP-basicDEP),computeAddLats(result,moreDEP-basicDEP));nxtline();
+	prepare_showAdditionalLatency();\
+	showAdditionalLatency(result,#callfunc,gpu_count,block_perGPU,thread_perBlock,basicDEP,moreDEP);\
 
 
 void Null_Kernel(unsigned int block_perGPU, unsigned int thread_perBlock)

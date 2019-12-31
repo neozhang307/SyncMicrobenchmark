@@ -1,4 +1,5 @@
 #include "Implicit_Barrier_Kernel.cuh"
+#include "wrap_launch_functions.cuh"
 
 //The kernel should last long enough to study the launch overhead hidden in kernel launch. 
 //These kernels are generated for DGX1. 

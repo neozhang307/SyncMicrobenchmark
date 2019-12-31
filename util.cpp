@@ -130,6 +130,23 @@ void showlatency(latencys* g_result)
   }
 }
 
+void prepare_showAdditionalLatency()
+{
+  printf("method\tGPUcount\trep\tblk\tthrd\tm(clk)\ts(clk)\tm(sync)\ts(sync)\tm(laun)\ts(laun)\tm(ttl)\ts(ttl)\tm(avelaun)\ts(avelaun)\tm(addl)\ts(addl)\n"); 
+}
+
+void showAdditionalLatency(latencys *result, const char* funcname, 
+  unsigned int gpu_count,
+  unsigned int block_perGPU, unsigned int thread_perBlock, 
+  unsigned int basicDEP, unsigned int moreDEP)
+{
+  printf("%s\t%u\t%u\t%u\t%u\t",funcname,gpu_count,basicDEP,block_perGPU,thread_perBlock);
+  showlatency(result);printf("%f\t%f\t",result[0].mean_laun/basicDEP,result[0].s_laun/basicDEP);nxtline();
+  printf("%s\t%u\t%u\t%u\t%u\t",funcname ,gpu_count,moreDEP,block_perGPU,thread_perBlock);
+  showlatency(result+1);printf("%f\t%f\t",result[1].mean_laun/moreDEP,result[1].s_laun/moreDEP);printf("%f\t%f\t",computeAddLat(result,moreDEP-basicDEP),computeAddLats(result,moreDEP-basicDEP));nxtline();
+}
+
+
 double computeAddLat(latencys* g_result, unsigned int difference)//size=2
 {
   return (g_result[1].mean_lat-g_result[0].mean_lat)/difference;
