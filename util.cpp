@@ -1,12 +1,14 @@
 #include "util.h"
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <cuda_runtime.h>
 #include<string.h>
 #include <set>
-#include "stdlib.h"
-#include "stdio.h"
-#include"cuda_runtime.h"
-
+#include <math.h>
 #include<time.h>
+
+
 
 unsigned long ToUInt(char* str)
 {
@@ -60,7 +62,9 @@ void getIdenticalGPUs(int num_of_gpus, std::set<int> &identicalGPUs, bool coalau
 
   for (int i = 0; i < num_of_gpus; i++) {
     cudaDeviceProp deviceProp;
-    checkCudaErrors(cudaGetDeviceProperties(&deviceProp, i));
+    
+    cudaGetDeviceProperties(&deviceProp, i);
+    cudaCheckError();
     major_minor[i * 2] = deviceProp.major;
     major_minor[i * 2 + 1] = deviceProp.minor;
     printf("GPU Device %d: \"%s\" with compute capability %d.%d\n", i,
@@ -98,7 +102,8 @@ void getIdenticalGPUs(int num_of_gpus, std::set<int> &identicalGPUs, bool coalau
   {
       while (it != identicalGPUs.end()) {
         cudaDeviceProp deviceProp;
-        checkCudaErrors(cudaGetDeviceProperties(&deviceProp, *it));
+        cudaGetDeviceProperties(&deviceProp, *it);
+        cudaCheckError();
         // Remove all the GPUs which are less than the best arch available
         if (deviceProp.major != maxMajorMinor[0] &&
             deviceProp.minor != maxMajorMinor[1]) {
@@ -113,3 +118,26 @@ void getIdenticalGPUs(int num_of_gpus, std::set<int> &identicalGPUs, bool coalau
     }
   return;
 }
+
+
+
+void showlatency(latencys* g_result)
+{
+  double*c_result = (double*)g_result;
+  for(int j=0; j<8; j++)
+  {
+    printf("%f\t",c_result[j]);
+  }
+}
+
+double computeAddLat(latencys* g_result, unsigned int difference)//size=2
+{
+  return (g_result[1].mean_lat-g_result[0].mean_lat)/difference;
+}
+
+double computeAddLats(latencys* g_result, unsigned int difference)//size=2
+{
+  return sqrt((g_result[1].s_lat*g_result[1].s_lat+g_result[0].s_lat*g_result[0].s_lat))/difference;
+}
+
+void nxtline(){printf("\n");};
