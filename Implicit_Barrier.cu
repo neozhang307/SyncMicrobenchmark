@@ -20,17 +20,13 @@ But in this microbenchmark, we include the measurements of launch overhead in al
 
 */
 
-void workload_influence()
-{
-	//increase the workload only test the additional latency.
-
-}
-
 
 int main(int argc, char **argv)
 {
 	cudaDeviceProp deviceProp;
     cudaGetDeviceProperties(&deviceProp, 0);
+    int sm_ver;
+    cudaDeviceGetAttribute ( &sm_ver, cudaDevAttrComputeCapabilityMajor, 0);
     cudaCheckError();
    	unsigned int smx_count = deviceProp.multiProcessorCount;
 //	double* result=(double*)malloc(sizeof(double)*6*8);
@@ -40,15 +36,20 @@ int main(int argc, char **argv)
 	//merge this two situation together
 	//launch single null kernel and different features
 	//launch additional null kernel and compute the kernel overhead here
-	
-	// Test_Null_Kernel(smx_count,1024);
-	// Test_Null_Kernel_MGPU<2>(1,32);
-	
+	Test_Null_Kernel(smx_count,1024);
+	Test_Null_Kernel_MGPU<2>(1,32);
+
 	//launch big kernel and additional big kernel to compute the kernel overhead
+   	if(sm_ver<7)
+   	{
+   		printf("Sleep Instruction is only supported after sm_70\n");
+   		exit(0);
+ 	}
 	Test_Sleep_Kernel(smx_count,1024);
 	Test_Sleep_Kernel_MGPU<8>(smx_count,1024);
 
 	Test_Workload_Influence(smx_count,1024);
+
 }
 
 
