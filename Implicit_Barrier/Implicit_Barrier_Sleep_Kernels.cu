@@ -1,6 +1,6 @@
 #include "Implicit_Barrier_Kernel.cuh"
 #include "Implicit_Barrier.h"
-#include "wrap_launch_functions.cuh"
+#include "../share/wrap_launch_functions.cuh"
 
 #include <stdio.h>
 //The kernel should last long enough to study the launch overhead hidden in kernel launch. 

@@ -1,33 +1,10 @@
 
 #include"measurement.cuh"
-#include "wrap_launch_functions.cuh"
-#include "stdio.h"
-#include "util.h"
+#include "../share/wrap_launch_functions.cuh"
+#include "../share/util.h"
 
-void getStatistics(double &mean, double &s,
-	double* list, unsigned int size)
-{
-	if(size<=0)
-	{
-		mean=0;
-		s=0;
-		return;
-	}
-	double sum = 0; 
-	for(int i=0; i<size; i++)
-	{
-		sum+=list[i];
-	}
-	mean=sum/size;
+#include <stdio.h>
 
-	sum=0;
-	for(int i=0; i<size; i++)
-	{
-		sum+=pow(list[i]-mean,2);
-	}
-
-	s=sqrt(sum/(size-1));	
-}
 
 typedef void(*launchfunction)(nKernel, unsigned int, unsigned int, unsigned int, cudaLaunchParams*);
 template <int gpu_count>

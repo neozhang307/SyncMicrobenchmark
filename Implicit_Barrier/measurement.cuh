@@ -1,6 +1,8 @@
-#include "wrap_launch_functions.cuh"
 #include "Implicit_Barrier_Kernel.cuh"
-#include "util.h"
+
+#include "../share/util.h"
+#include "../share/wrap_launch_functions.cuh"
+
 #ifndef SIZE
 	#define SIZE 101
 #endif

@@ -1,4 +1,4 @@
-#include "repeat.h"
+#include "../share/repeat.h"
 #include"cuda_runtime.h"
 
 

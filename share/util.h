@@ -38,6 +38,9 @@ void getIdenticalGPUs(int num_of_gpus, std::set<int> &identicalGPUs, bool coalau
   identicalGPUs GPUs with same platform
   coaleanch if true identicalGPUs should be able to do coalanch (i.e. P100 and V100)
 */
+void getStatistics(double &mean, double &s,
+  double* list, unsigned int size);
+
 
 void showlatency(latencys g_result);
 

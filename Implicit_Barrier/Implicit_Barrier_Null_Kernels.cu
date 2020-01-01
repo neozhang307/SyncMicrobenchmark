@@ -1,6 +1,7 @@
 #include "Implicit_Barrier_Kernel.cuh"
 #include "Implicit_Barrier.h"
-#include "util.h"
+
+#include "../share/util.h"
 
 
 #include <string.h>

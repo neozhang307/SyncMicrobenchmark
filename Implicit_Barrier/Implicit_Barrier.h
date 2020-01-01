@@ -1,7 +1,8 @@
-#include "repeat.h"
 #include "measurement.cuh"
-#include "wrap_launch_functions.cuh"
-#include "util.h"
+
+#include "../share/repeat.h"
+#include "../share/wrap_launch_functions.cuh"
+#include "../share/util.h"
 
 //In order to reduce overhead, we use repeat MACRO instead of forloop here. 
 //MACRO is easier here
