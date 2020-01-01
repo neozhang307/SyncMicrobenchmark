@@ -47,7 +47,7 @@ void Test_Sleep_Kernel(unsigned int block_perGPU, unsigned int thread_perBlock)
 	latencys* result  = (latencys*)malloc(3*sizeof(latencys));
 	printf("_______________________________________________________________________\n");
 
-	printf("Sleep Kernels\n");
+	printf("Fuse Sleep Kernels to test overhead when kernel execution latency is long enough\n");
 	PACKED_SLEEP_TEST(traditional_launch, null_kernel_5, null_kernel_80, 1, block_perGPU, thread_perBlock,5000);
 	PACKED_SLEEP_TEST(cooperative_launch, null_kernel_5, null_kernel_80, 1, block_perGPU, thread_perBlock,5000);
 
@@ -59,7 +59,7 @@ template <int gpu_count>
 void Test_Sleep_Kernel_MGPU(unsigned int block_perGPU, unsigned int thread_perBlock)
 {
 	printf("_______________________________________________________________________\n");
-	printf("Sleep Kernel for multi-GPU\n");
+	printf("Fuse Sleep Kernel for multi-GPU\n");
 	latencys* result  = (latencys*)malloc(3*sizeof(latencys));
 
 	if(gpu_count>=1)

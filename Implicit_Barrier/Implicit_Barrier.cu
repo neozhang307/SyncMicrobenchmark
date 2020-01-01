@@ -1,7 +1,9 @@
-#include "repeat.h"
+
 // #include "Implicit_Barrier_Kernel.cuh"
 #include "Implicit_Barrier.h"
-#include "util.h"
+
+#include "../share/util.h"
+#include "../share/repeat.h"
 
 #include <stdio.h>
 /*
