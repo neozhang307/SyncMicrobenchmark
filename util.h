@@ -39,13 +39,21 @@ void getIdenticalGPUs(int num_of_gpus, std::set<int> &identicalGPUs, bool coalau
   coaleanch if true identicalGPUs should be able to do coalanch (i.e. P100 and V100)
 */
 
-void showlatency(latencys* g_result);
+void showlatency(latencys g_result);
+
 void prepare_showAdditionalLatency();
-void showAdditionalLatency(latencys *result, const char* funcname, 
+void showAdditionalLatency(latencys result_basic, latencys result_more, const char* funcname, 
   unsigned int gpu_count,
   unsigned int block_perGPU, unsigned int thread_perBlock, 
   unsigned int basicDEP, unsigned int moreDEP);
 
-double computeAddLat(latencys* g_result, unsigned int difference);
-double computeAddLats(latencys* g_result, unsigned int difference);//size=2
+void prepare_showFusedResult();
+void showFusedResult(latencys result_bl_bk, latencys result_bl_mk, latencys result_ml_bk,
+  const char* funcname, 
+  unsigned int gpu_count,
+  unsigned int block_perGPU, unsigned int thread_perBlock, 
+  unsigned int basicDEP, unsigned int moreDEP, unsigned int idea_basic_workload);
+
+double computeAddLat(latencys result_basic, latencys result_more, unsigned int difference);
+double computeAddLats(latencys result_basic, latencys result_more, unsigned int difference);
 void nxtline();

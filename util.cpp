@@ -121,9 +121,9 @@ void getIdenticalGPUs(int num_of_gpus, std::set<int> &identicalGPUs, bool coalau
 
 
 
-void showlatency(latencys* g_result)
+void showlatency(latencys g_result)
 {
-  double*c_result = (double*)g_result;
+  double*c_result = (double*)&g_result;
   for(int j=0; j<8; j++)
   {
     printf("%f\t",c_result[j]);
@@ -132,29 +132,61 @@ void showlatency(latencys* g_result)
 
 void prepare_showAdditionalLatency()
 {
-  printf("method\tGPUcount\trep\tblk\tthrd\tm(clk)\ts(clk)\tm(sync)\ts(sync)\tm(laun)\ts(laun)\tm(ttl)\ts(ttl)\tm(avelaun)\ts(avelaun)\tm(addl)\ts(addl)\n"); 
+  printf("method\tGPUCount\trep\tblk\tthrd\tm(clk)\ts(clk)\tm(sync)\ts(sync)\tm(laun)\ts(laun)\tm(ttl)\ts(ttl)\tm(avelaun)\ts(avelaun)\tm(addl)\ts(addl)\n"); 
 }
 
-void showAdditionalLatency(latencys *result, const char* funcname, 
+void showAdditionalLatency(latencys g_result_basic, latencys g_result_more,const char* funcname, 
   unsigned int gpu_count,
   unsigned int block_perGPU, unsigned int thread_perBlock, 
   unsigned int basicDEP, unsigned int moreDEP)
 {
   printf("%s\t%u\t%u\t%u\t%u\t",funcname,gpu_count,basicDEP,block_perGPU,thread_perBlock);
-  showlatency(result);printf("%f\t%f\t",result[0].mean_laun/basicDEP,result[0].s_laun/basicDEP);nxtline();
+  showlatency(g_result_basic);
+  printf("%f\t%f\t",g_result_basic.mean_laun/basicDEP,g_result_basic.s_laun/basicDEP);
+  nxtline();
+
   printf("%s\t%u\t%u\t%u\t%u\t",funcname ,gpu_count,moreDEP,block_perGPU,thread_perBlock);
-  showlatency(result+1);printf("%f\t%f\t",result[1].mean_laun/moreDEP,result[1].s_laun/moreDEP);printf("%f\t%f\t",computeAddLat(result,moreDEP-basicDEP),computeAddLats(result,moreDEP-basicDEP));nxtline();
+  showlatency(g_result_more);
+  printf("%f\t%f\t",g_result_more.mean_laun/moreDEP,g_result_more.s_laun/moreDEP);
+  printf("%f\t%f\t",
+    computeAddLat(g_result_basic,g_result_more,moreDEP-basicDEP),
+    computeAddLats(g_result_basic,g_result_more,moreDEP-basicDEP));
+  nxtline();
+
 }
 
 
-double computeAddLat(latencys* g_result, unsigned int difference)//size=2
+void prepare_showFusedResult()
 {
-  return (g_result[1].mean_lat-g_result[0].mean_lat)/difference;
+  printf("method\tGPUCount\trep\tblk\tthrd\tidea(wkld)\tm(wkld)\ts(wkld)\tm(ovh)\ts(ovh)\n"); 
 }
 
-double computeAddLats(latencys* g_result, unsigned int difference)//size=2
+void showFusedResult(latencys result_bl_bk, latencys result_bl_mk, latencys result_ml_bk,
+  const char* funcname, 
+  unsigned int gpu_count,
+  unsigned int block_perGPU, unsigned int thread_perBlock, 
+  unsigned int basicDEP, unsigned int moreDEP, unsigned int idea_basic_workload)
 {
-  return sqrt((g_result[1].s_lat*g_result[1].s_lat+g_result[0].s_lat*g_result[0].s_lat))/difference;
+  printf("%s\t%u\t%u:%u\t%u\t%u\t",funcname,gpu_count,basicDEP,moreDEP, block_perGPU,thread_perBlock);
+  //real workload and theoretical workload
+  printf("%u\t%f\t%f\t",idea_basic_workload,
+    computeAddLat(result_bl_bk,result_bl_mk,moreDEP-basicDEP),
+    computeAddLats(result_bl_bk,result_bl_mk,moreDEP-basicDEP));
+  printf("%f\t%f\n",
+    computeAddLat(result_bl_mk,result_ml_bk,moreDEP-basicDEP),
+    computeAddLats(result_bl_mk,result_ml_bk,moreDEP-basicDEP));
+  //deduced launch overhead
+}
+
+
+double computeAddLat(latencys g_result_basic, latencys g_result_more, unsigned int difference)//size=2
+{
+  return (g_result_more.mean_lat-g_result_basic.mean_lat)/difference;
+}
+
+double computeAddLats(latencys g_result_basic, latencys g_result_more, unsigned int difference)//size=2
+{
+  return sqrt((g_result_more.s_lat*g_result_more.s_lat+g_result_basic.s_lat*g_result_basic.s_lat))/difference;
 }
 
 void nxtline(){printf("\n");};

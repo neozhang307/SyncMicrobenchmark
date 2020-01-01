@@ -1,6 +1,8 @@
 #include "Implicit_Barrier_Kernel.cuh"
+#include "Implicit_Barrier.h"
 #include "wrap_launch_functions.cuh"
 
+#include <stdio.h>
 //The kernel should last long enough to study the launch overhead hidden in kernel launch. 
 //These kernels are generated for DGX1. 
 //1 node
@@ -40,3 +42,19 @@ N2_KERNEL(16);
 N2_KERNEL(32);
 N2_KERNEL(64);
 N2_KERNEL(128);
+
+#define PACKED_SLEEP_TEST(callfunc,basickernel,fusedkernel, gpu_count, block_perGPU, thread_perBlock); \
+	TEST_ADDITIONAL_LATENCY(callfunc, basickernel,1,128,gpu_count,block_perGPU,thread_perBlock);\
+	TEST_ADDITIONAL_LATENCY(callfunc, fusedkernel,1,128,gpu_count,block_perGPU,thread_perBlock);\
+	TEST_FUSED_KERNEL_1V16_DIFERENCE(callfunc, basickernel, fusedkernel,1,16,gpu_count, block_perGPU,thread_perBlock,5000);\
+
+void Test_Sleep_Kernel(unsigned int block_perGPU, unsigned int thread_perBlock)
+{
+	latencys* result  = (latencys*)malloc(3*sizeof(latencys));
+
+	printf("Sleep Kernels\n");
+	PACKED_SLEEP_TEST(traditional_launch, null_kernel_5, null_kernel_80, 1, block_perGPU, thread_perBlock);
+	PACKED_SLEEP_TEST(cooperative_launch, null_kernel_5, null_kernel_80, 1, block_perGPU, thread_perBlock);
+
+	free(result);
+}

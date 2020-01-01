@@ -29,6 +29,7 @@ void __forceinline__ fname##_##DEP(nKernel func,unsigned int blockPerGPU,unsigne
 
 #define gencallfun(callfunc) \
 	repeatlaunch(callfunc,1); \
+	repeatlaunch(callfunc,16); \
 	repeatlaunch(callfunc,128); \
 
 gencallfun(traditional_launch);
@@ -64,6 +65,7 @@ void __forceinline__ omp_traditional_launch##_##DEP(nKernel func,unsigned int bl
 }
 
 repeatomp(1);
+repeatomp(16);
 repeatomp(128); 
 
 #define DEF_WRAP_LAUNCH_FUNCTION

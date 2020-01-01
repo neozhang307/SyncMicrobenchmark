@@ -26,15 +26,6 @@ void workload_influence()
 
 }
 
-void Big_Kernel()
-{
-
-}
-template <int gpu_count>
-void Big_Kernel_MGP()
-{
-	
-}
 
 int main(int argc, char **argv)
 {
@@ -49,9 +40,12 @@ int main(int argc, char **argv)
 	//merge this two situation together
 	//launch single null kernel and different features
 	//launch additional null kernel and compute the kernel overhead here
-	Null_Kernel(smx_count,1024);
-	Null_Kernel_MGPU<2>(1,32);
+	
+	// Test_Null_Kernel(smx_count,1024);
+	// Test_Null_Kernel_MGPU<2>(1,32);
+	
 	//launch big kernel and additional big kernel to compute the kernel overhead
+	Test_Sleep_Kernel(smx_count,1024);
 
 
 }
