@@ -19,7 +19,7 @@
 	prepare_showFusedResult();\
 	showFusedResult(result[2],result[0],result[1],#callfunc,gpu_count,block_perGPU,thread_perBlock,basicDEP,moreDEP,idea_basic_workload);\
 
-
+void Test_Workload_Influence(unsigned int block_perGPU, unsigned int thread_perBlock);
 
 void Test_Null_Kernel(unsigned int block_perGPU, unsigned int thread_perBlock);
 

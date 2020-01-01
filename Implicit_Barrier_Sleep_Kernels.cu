@@ -33,6 +33,118 @@ N_KERNEL(200);
 
 //to study the relationship between kernel total latency and execution latency
 
+
+//#define PACKED_SLEEP_TEST(callfunc,basickernel,fusedkernel, gpu_count, block_perGPU, thread_perBlock,idea_workload); \
+	TEST_ADDITIONAL_LATENCY(callfunc, basickernel,1,128,gpu_count,block_perGPU,thread_perBlock);\
+	TEST_ADDITIONAL_LATENCY(callfunc, fusedkernel,1,128,gpu_count,block_perGPU,thread_perBlock);\
+	TEST_FUSED_KERNEL_1V16_DIFERENCE(callfunc, basickernel, fusedkernel,1,16,gpu_count, block_perGPU,thread_perBlock,idea_workload);\
+
+#define PACKED_SLEEP_TEST(callfunc,basickernel,fusedkernel, gpu_count, block_perGPU, thread_perBlock,idea_workload); \
+	TEST_FUSED_KERNEL_1V16_DIFERENCE(callfunc, basickernel, fusedkernel,1,16,gpu_count, block_perGPU,thread_perBlock,idea_workload);\
+
+void Test_Sleep_Kernel(unsigned int block_perGPU, unsigned int thread_perBlock)
+{
+	latencys* result  = (latencys*)malloc(3*sizeof(latencys));
+	printf("_______________________________________________________________________\n");
+
+	printf("Sleep Kernels\n");
+	PACKED_SLEEP_TEST(traditional_launch, null_kernel_5, null_kernel_80, 1, block_perGPU, thread_perBlock,5000);
+	PACKED_SLEEP_TEST(cooperative_launch, null_kernel_5, null_kernel_80, 1, block_perGPU, thread_perBlock,5000);
+
+	free(result);
+}
+
+
+template <int gpu_count>
+void Test_Sleep_Kernel_MGPU(unsigned int block_perGPU, unsigned int thread_perBlock)
+{
+	printf("_______________________________________________________________________\n");
+	printf("Sleep Kernel for multi-GPU\n");
+	latencys* result  = (latencys*)malloc(3*sizeof(latencys));
+
+	if(gpu_count>=1)
+	{
+		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_5, null_kernel_80, 1, block_perGPU, thread_perBlock,5000);
+	}
+	if(gpu_count>=2)
+	{
+		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_15, null_kernel_240, 2, block_perGPU, thread_perBlock,15000);
+	}
+	if(gpu_count>=3)
+	{
+		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_30, null_kernel_480, 3, block_perGPU, thread_perBlock,30000);
+	}
+	if(gpu_count>=4)
+	{
+		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_50, null_kernel_800, 4, block_perGPU, thread_perBlock,50000);
+	}
+	if(gpu_count>=5)
+	{
+		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_80, null_kernel_1280, 5, block_perGPU, thread_perBlock,80000);
+	}
+	if(gpu_count>=6)
+	{
+		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_105, null_kernel_1680, 6, block_perGPU, thread_perBlock,105000);
+	}
+	if(gpu_count>=7)
+	{
+		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_160, null_kernel_2560, 7, block_perGPU, thread_perBlock,160000);
+	}
+	if(gpu_count>=8)
+	{
+		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_200, null_kernel_3200, 8, block_perGPU, thread_perBlock,200000);
+	}
+
+
+	//in fact there is no need to use sleep to test the overhead here, because the main overhead actually comes from cleaning the pipeline when calling cudasyncdevice()
+	if(gpu_count>=1)
+	{
+		PACKED_SLEEP_TEST(omp_traditional_launch, null_kernel_30, null_kernel_480, 1, block_perGPU, thread_perBlock,30000);
+	}
+	if(gpu_count>=2)
+	{
+		PACKED_SLEEP_TEST(omp_traditional_launch, null_kernel_30, null_kernel_480, 1, block_perGPU, thread_perBlock,30000);
+	}
+	if(gpu_count>=3)
+	{
+		PACKED_SLEEP_TEST(omp_traditional_launch, null_kernel_30, null_kernel_480, 1, block_perGPU, thread_perBlock,30000);
+	}
+	if(gpu_count>=4)
+	{
+		PACKED_SLEEP_TEST(omp_traditional_launch, null_kernel_30, null_kernel_480, 1, block_perGPU, thread_perBlock,30000);
+	}
+	if(gpu_count>=5)
+	{
+		PACKED_SLEEP_TEST(omp_traditional_launch, null_kernel_30, null_kernel_480, 1, block_perGPU, thread_perBlock,30000);
+	}
+	if(gpu_count>=6)
+	{
+		PACKED_SLEEP_TEST(omp_traditional_launch, null_kernel_30, null_kernel_480, 1, block_perGPU, thread_perBlock,30000);
+	}
+	if(gpu_count>=7)
+	{
+		PACKED_SLEEP_TEST(omp_traditional_launch, null_kernel_30, null_kernel_480, 1, block_perGPU, thread_perBlock,30000);
+	}
+	if(gpu_count>=8)
+	{
+		PACKED_SLEEP_TEST(omp_traditional_launch, null_kernel_30, null_kernel_480, 1, block_perGPU, thread_perBlock,30000);
+	}
+	free(result);
+}
+
+
+
+template void Test_Sleep_Kernel_MGPU<1>(unsigned int block_perGPU, unsigned int thread_perBlock);
+template void Test_Sleep_Kernel_MGPU<2>(unsigned int block_perGPU, unsigned int thread_perBlock);
+template void Test_Sleep_Kernel_MGPU<3>(unsigned int block_perGPU, unsigned int thread_perBlock);
+template void Test_Sleep_Kernel_MGPU<4>(unsigned int block_perGPU, unsigned int thread_perBlock);
+template void Test_Sleep_Kernel_MGPU<5>(unsigned int block_perGPU, unsigned int thread_perBlock);
+template void Test_Sleep_Kernel_MGPU<6>(unsigned int block_perGPU, unsigned int thread_perBlock);
+template void Test_Sleep_Kernel_MGPU<7>(unsigned int block_perGPU, unsigned int thread_perBlock);
+template void Test_Sleep_Kernel_MGPU<8>(unsigned int block_perGPU, unsigned int thread_perBlock);
+
+
+
 N2_KERNEL(0);
 N2_KERNEL(1);
 N2_KERNEL(2);
@@ -43,18 +155,21 @@ N2_KERNEL(32);
 N2_KERNEL(64);
 N2_KERNEL(128);
 
-#define PACKED_SLEEP_TEST(callfunc,basickernel,fusedkernel, gpu_count, block_perGPU, thread_perBlock); \
-	TEST_ADDITIONAL_LATENCY(callfunc, basickernel,1,128,gpu_count,block_perGPU,thread_perBlock);\
-	TEST_ADDITIONAL_LATENCY(callfunc, fusedkernel,1,128,gpu_count,block_perGPU,thread_perBlock);\
-	TEST_FUSED_KERNEL_1V16_DIFERENCE(callfunc, basickernel, fusedkernel,1,16,gpu_count, block_perGPU,thread_perBlock,5000);\
 
-void Test_Sleep_Kernel(unsigned int block_perGPU, unsigned int thread_perBlock)
+void Test_Workload_Influence(unsigned int block_perGPU, unsigned int thread_perBlock)
 {
+	printf("_______________________________________________________________________\n");
+	printf("Test the influence of kernel execution latency with additional latency\n");	
 	latencys* result  = (latencys*)malloc(3*sizeof(latencys));
-
-	printf("Sleep Kernels\n");
-	PACKED_SLEEP_TEST(traditional_launch, null_kernel_5, null_kernel_80, 1, block_perGPU, thread_perBlock);
-	PACKED_SLEEP_TEST(cooperative_launch, null_kernel_5, null_kernel_80, 1, block_perGPU, thread_perBlock);
-
+	TEST_ADDITIONAL_LATENCY(traditional_launch,null2_kernel_0, 1,128,1, block_perGPU, thread_perBlock);
+	TEST_ADDITIONAL_LATENCY(traditional_launch,null2_kernel_1, 1,128,1, block_perGPU, thread_perBlock);
+	TEST_ADDITIONAL_LATENCY(traditional_launch,null2_kernel_2, 1,128,1, block_perGPU, thread_perBlock);
+	TEST_ADDITIONAL_LATENCY(traditional_launch,null2_kernel_4, 1,128,1, block_perGPU, thread_perBlock);
+	TEST_ADDITIONAL_LATENCY(traditional_launch,null2_kernel_8, 1,128,1, block_perGPU, thread_perBlock);
+	TEST_ADDITIONAL_LATENCY(traditional_launch,null2_kernel_16, 1,128,1, block_perGPU, thread_perBlock);
+	TEST_ADDITIONAL_LATENCY(traditional_launch,null2_kernel_32, 1,128,1, block_perGPU, thread_perBlock);
+	TEST_ADDITIONAL_LATENCY(traditional_launch,null2_kernel_64, 1,128,1, block_perGPU, thread_perBlock);
+	TEST_ADDITIONAL_LATENCY(traditional_launch,null2_kernel_128, 1,128,1, block_perGPU, thread_perBlock);
 	free(result);
 }
+

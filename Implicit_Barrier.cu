@@ -46,8 +46,9 @@ int main(int argc, char **argv)
 	
 	//launch big kernel and additional big kernel to compute the kernel overhead
 	Test_Sleep_Kernel(smx_count,1024);
+	Test_Sleep_Kernel_MGPU<8>(smx_count,1024);
 
-
+	Test_Workload_Influence(smx_count,1024);
 }
 
 

@@ -15,6 +15,7 @@ void Test_Null_Kernel(unsigned int block_perGPU, unsigned int thread_perBlock)
 {
 	latencys* result  = (latencys*)malloc(2*sizeof(latencys));
 
+	printf("_______________________________________________________________________\n");
 	printf("Empty Kernel\n");
 	printf("When Calling count is one, the result of total latency (ns)\n");
 
@@ -63,6 +64,7 @@ template <int gpu_count>
 void Test_Null_Kernel_MGPU(unsigned int block_perGPU, unsigned int thread_perBlock)
 {
 
+	printf("_______________________________________________________________________\n");
 	printf("Empty Kernel for multi-GPU\n");
 	printf("When Calling count is one, the result of total latency (ns)\n");
 
