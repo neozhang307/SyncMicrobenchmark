@@ -38,7 +38,7 @@ void measureLatencys(latencys* result, launchfunction run_func, nKernel kernel_f
 		cudaCheckError(); 
 
 		timespec ini,tsstart,tsend,tsendop,tsendsync;
-		long time_elapsed_ns_laun, time_elapsed_ns_lat ;
+		long time_elapsed_ns;
 		double latency_laun[SIZE];
 		double latency_lat[SIZE];
 		double latency_clock[SIZE];
@@ -82,24 +82,24 @@ void measureLatencys(latencys* result, launchfunction run_func, nKernel kernel_f
 			}
  			clock_gettime(CLOCK_REALTIME, &tsendsync);
  			//latencys of clock function
-	 		time_elapsed_ns_laun = (tsstart.tv_nsec-ini.tv_nsec);
-	 		time_elapsed_ns_laun += 1000000000*(tsstart.tv_sec-ini.tv_sec);
-	 		latency_clock[i]=time_elapsed_ns_laun;
+	 		time_elapsed_ns = (tsstart.tv_nsec-ini.tv_nsec);
+	 		time_elapsed_ns += 1000000000*(tsstart.tv_sec-ini.tv_sec);
+	 		latency_clock[i]=time_elapsed_ns;
 
 	 		//latencys of launch functions (no sync here)
-	 		time_elapsed_ns_laun = (tsend.tv_nsec-tsstart.tv_nsec);
-	 		time_elapsed_ns_laun += 1000000000*(tsend.tv_sec-tsstart.tv_sec);
-	 		latency_laun[i]=time_elapsed_ns_laun;
+	 		time_elapsed_ns = (tsend.tv_nsec-tsstart.tv_nsec);
+	 		time_elapsed_ns += 1000000000*(tsend.tv_sec-tsstart.tv_sec);
+	 		latency_laun[i]=time_elapsed_ns;
 
 	 		//latencys of total kernel total latency (after sync)
-			time_elapsed_ns_lat = (tsendop.tv_nsec-tsstart.tv_nsec);
-	 		time_elapsed_ns_lat += 1000000000*(tsendop.tv_sec-tsstart.tv_sec);
-	 		latency_lat[i]=time_elapsed_ns_lat;
+			time_elapsed_ns = (tsendop.tv_nsec-tsstart.tv_nsec);
+	 		time_elapsed_ns += 1000000000*(tsendop.tv_sec-tsstart.tv_sec);
+	 		latency_lat[i]=time_elapsed_ns;
 
 	 		//latencys of synchronization functions 
-			time_elapsed_ns_lat = (tsendsync.tv_nsec-tsendop.tv_nsec);
-	 		time_elapsed_ns_lat += 1000000000*(tsendsync.tv_sec-tsendop.tv_sec);
-	 		latency_syncfunc[i]=time_elapsed_ns_lat;
+			time_elapsed_ns = (tsendsync.tv_nsec-tsendop.tv_nsec);
+	 		time_elapsed_ns += 1000000000*(tsendsync.tv_sec-tsendop.tv_sec);
+	 		latency_syncfunc[i]=time_elapsed_ns;
 		}
 		cudaCheckError();
 
