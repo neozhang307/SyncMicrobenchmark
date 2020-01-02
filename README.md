@@ -42,7 +42,9 @@ By using "additional latency", it will be possible to eliminate the overhead of 
 #### Workload Test
 The same of NULL KERNEL
 
-Just to show how additioanl latency tested is related to the real kernel execution latency. Details is explained in the Use_Microbenchmark_To_Better_Understand_The_Overhead_Of_CUDA_Kernels__Poster_.pdf in the same folder.
+Just to show how additioanl latency tested is related to the real kernel execution latency. Before a certain point, increasing kernel execution latency would not affect the additional latency caused by additional kernel kernel. 
+
+Details is explained in the Use_Microbenchmark_To_Better_Understand_The_Overhead_Of_CUDA_Kernels__Poster_.pdf in the same folder.
 
 ## Explicit Barrier
 TBC
