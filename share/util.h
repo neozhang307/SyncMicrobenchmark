@@ -23,6 +23,14 @@ struct latencys
 
    double mean_lat;
    double s_lat;
+
+  //block sync, grid sync latency;
+  double latency_min;//count when last thread start sync first thread finish sync
+  double s_latency_min;
+  //computing throughput;
+  double latency_max;//count when first thread start sync last thread finish sync
+  double s_latency_max;//count when first thread start sync last thread finish sync
+
 };
 #define LATS
 #endif
@@ -43,6 +51,8 @@ void getStatistics(double &mean, double &s,
 
 
 void showlatency(latencys g_result);
+void showlatency_ttl(latencys g_result);
+void showlatency_cycle(latencys g_result);
 
 void prepare_showAdditionalLatency();
 void showAdditionalLatency(latencys result_basic, latencys result_more, const char* funcname, 

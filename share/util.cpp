@@ -10,6 +10,7 @@
 
 
 
+
 unsigned long ToUInt(char* str)
 {
     unsigned long mult = 1;
@@ -152,6 +153,17 @@ void showlatency(latencys g_result)
     printf("%f\t",c_result[j]);
   }
 }
+
+void showlatency_ttl(latencys g_result)
+{
+    printf("%f\t%f\t",g_result.mean_lat, g_result.s_lat);
+}
+
+void showlatency_cycle(latencys g_result)
+{
+    printf("%f\t%f\t",g_result.latency_min, g_result.s_latency_min);
+}
+
 
 void prepare_showAdditionalLatency()
 {
