@@ -4,7 +4,6 @@
 #include "wrap_launch_functions.cuh"
 
 
-//2. measure latencys in ns (involve several SMs) TODO
 
 
 
@@ -13,10 +12,6 @@
 	measureLatency_cycle(result,cooperative_launch,func##_DEP##DEP,blockPerGPU,threadPerBlock,A,B,TILE);\
 	showRepeatKernelLatency(result[0], clk_result[0],DEP*2);\
 	
-	//showlatency_cycle(result[0]);\
-	showlatency_ttl(result[0]);\
-	printf("%f\t%f\t", computeAvgLatCycle(clk_result[0],result[0],DEP*2),computeAvgLatCycles(clk_result[0],result[0],DEP*2));\
-	nxtline();\
 
 #define thorought(result,func,blockPerGPU,threadPerBlock,A,B,TILE) \
 	prepare_showRepeatKernelLatency();\
