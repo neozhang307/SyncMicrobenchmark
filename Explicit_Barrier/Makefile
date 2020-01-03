@@ -5,7 +5,7 @@ CODEFLAG70=-arch sm_70
 CODEFLAG60=-arch sm_60
 GCCFLAG=-lcudart -L/usr/local/cuda/lib64 -I/usr/local/cuda/include
 OMPFLAG=-Xcompiler -fopenmp
-EXECUTABLE=TestRepeat BenchmarkSingleSM
+EXECUTABLE=TestRepeat BenchmarkIntraSM
 
 all: $(EXECUTABLE) 
 
@@ -25,11 +25,11 @@ Explicit_Barrier_BigKernel.o: Explicit_Barrier_BigKernel.cu
 
 Test_Repeat_Influence.o: Test_Repeat_Influence.cu 
 	nvcc -x cu $(CODEFLAG) -dc -o $@ $^
-Explicit_Barrier_SingleSM.o: Explicit_Barrier_SingleSM.cu 
+Explicit_Barrier_IntraSM.o: Explicit_Barrier_IntraSM.cu 
 	nvcc -x cu $(CODEFLAG) -dc -o $@ $^
 
 TestRepeat: Test_Repeat_Influence.o Explicit_Barrier_Kernel.o measurement.o ../share/util.o 
 	nvcc $(CODEFLAG) -o $@ $^
 
-BenchmarkSingleSM: Explicit_Barrier_SingleSM.o Explicit_Barrier_BigKernel.o Explicit_Barrier_Kernel.o measurement.o ../share/util.o 
+BenchmarkIntraSM: Explicit_Barrier_IntraSM.o Explicit_Barrier_BigKernel.o Explicit_Barrier_Kernel.o measurement.o ../share/util.o 
 	nvcc $(CODEFLAG) -o $@ $^

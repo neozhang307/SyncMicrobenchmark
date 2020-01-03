@@ -21,8 +21,15 @@ void __forceinline__ traditional_launch(fbaseKernel func,
 	func<<<blockPerGPU,threadPerBlock>>>(((float*)KernelArgs[0])[0],((float*)KernelArgs[1])[0],
 		((double**)KernelArgs[2])[0],((unsigned int**)KernelArgs[3])[0],
 		((unsigned int**)KernelArgs[4])[0],(( unsigned int*)KernelArgs[5])[0]);
-	// cudaLaunchCooperativeKernel((void*)func, blockPerGPU,threadPerBlock,KernelArgs,32,0);
 }
+
+void __forceinline__ multi_cooperative_launch(fbaseKernel func,
+	unsigned int blockPerGPU, unsigned int threadPerBlock, void** KernelArgs,
+	unsigned int GPU_count=1, cudaLaunchParams *launchParamsList=NULL)
+{
+	cudaLaunchCooperativeKernelMultiDevice(launchParamsList, GPU_count);
+}
+
 #define DEF_WRAP_LAUNCH_FUNCTION
 #endif
 // #ifndef DEF_WRAP_LAUNCH_FUNCTION

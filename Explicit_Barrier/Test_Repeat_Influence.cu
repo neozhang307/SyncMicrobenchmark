@@ -9,7 +9,7 @@
 
 #define single(result,func,DEP,blockPerGPU,threadPerBlock,A,B,TILE) \
 	printf("%s\t%s\t%u\t%u\t%u\t",#func, #DEP, blockPerGPU, threadPerBlock, TILE);\
-	measureLatency_cycle(result,cooperative_launch,func##_DEP##DEP,blockPerGPU,threadPerBlock,A,B,TILE);\
+	measureIntraSMLatency(result,cooperative_launch,func##_DEP##DEP,blockPerGPU,threadPerBlock,A,B,TILE);\
 	showRepeatKernelLatency(result[0], clk_result[0],DEP*2);\
 	
 

@@ -16,7 +16,7 @@ void benchmarkLatencyInSingleSM(fbaseKernel kernel, const char* kernelname)
 	prepare_showLatencyInSingleSM();
 	for(unsigned int threadPerBlock=32; threadPerBlock<=1024; threadPerBlock*=2)
 	{
-		measureLatency_cycle(&result,cooperative_launch,kernel,blockPerGPU,threadPerBlock,2,2,32);
+		measureIntraSMLatency(&result,cooperative_launch,kernel,blockPerGPU,threadPerBlock,2,2,32);
 		showLatencyInSingleSM(basic, result, kernelname, 1, 256, blockPerGPU, threadPerBlock);
 	}
 }
@@ -33,7 +33,7 @@ void benchmarkThroughputInSingleSM(fbaseKernel kernel, const char* kernelname,
 		unsigned int blockPerGPU=smx_count*basic;
 		for(unsigned int threadPerBlock=32; threadPerBlock<=1024; threadPerBlock*=2)
 		{
-			measureLatency_cycle(&result,traditional_launch,kernel,blockPerGPU,threadPerBlock,2,2,32);
+			measureIntraSMLatency(&result,traditional_launch,kernel,blockPerGPU,threadPerBlock,2,2,32);
 			showThroughputInSingleSM(result, kernelname, 
 					1, 128, blockPerGPU, threadPerBlock, smx_count,32);
 		}
