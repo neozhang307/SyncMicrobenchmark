@@ -9,12 +9,15 @@
 //1. measure latencys in cycle (single GPU)
 //1.1. measure the latency of instructions in the first SM
 //1.2. measure the throughput of instructions in the first SM
-void measureIntraSMLatency(latencys* result, 
+int measureIntraSMLatency(latencys* result, 
 	launchfunction run_func, fbaseKernel kernel_func,
 	unsigned int blockPerGPU, unsigned int threadPerBlock, 
 	float a, float b, unsigned int tile)
 {
 	{
+		int errorcode=1;
+		cudaError_t e;
+
 		double * d_out;
 		unsigned int totalThreadsPerGPU = blockPerGPU*threadPerBlock;
 		cudaMalloc((void **)&d_out, sizeof(double) * totalThreadsPerGPU*1);	
@@ -64,6 +67,12 @@ void measureIntraSMLatency(latencys* result,
 	 		GetLatencyOfSM(ulatency_min,ulatency_max,warp_count,h_time_stamp,h_idx,0);
 	 		latency_min[i]=ulatency_min;
 	 		latency_max[i]=ulatency_max;
+			e=cudaGetLastError();                                 
+	 		if(e!=cudaSuccess) {                                              
+	   			fprintf(stderr,"Cuda failure %s:%d: '%s'\n",__FILE__,__LINE__,cudaGetErrorString(e)); 
+				errorcode=-1;
+				break;
+	 		}
 		}
 		cudaCheckError();
 
@@ -76,15 +85,32 @@ void measureIntraSMLatency(latencys* result,
 		cudaFree(d_idx);
 		free(h_time_stamp);
 		free(h_idx);
+
+		// e=cudaGetLastError();                                 
+ 	// 	if(e!=cudaSuccess) {                                              
+  //  			fprintf(stderr,"Cuda failure %s:%d: '%s'\n",__FILE__,__LINE__,cudaGetErrorString(e)); 
+		// 	errorcode=-1;
+ 	// 	}
+
+ 		if(errorcode!=1)
+ 		{
+	 		cudaDeviceReset();
+			return -1;
+ 		}
+
+		return 1;
 	}
 }
 //2. measure latencys in ns (involve several SMs) TODO
-void measureInterSMLatency(latencys* result, 
+int measureInterSMLatency(latencys* result, 
 	launchfunction run_func, fbaseKernel kernel_func, 
 	unsigned int gpu_count,
 	unsigned int blockPerGPU, unsigned int threadPerBlock)
 {
 	{
+		int errorcode=1;
+		cudaError_t e;
+
 		cudaStream_t *mstream = (cudaStream_t*)malloc(sizeof(cudaStream_t)*gpu_count);
 		void***packedKernelArgs = (void***)malloc(sizeof(void**)*gpu_count); 
 		cudaLaunchParams *launchParamsList = (cudaLaunchParams *)malloc(
@@ -142,16 +168,26 @@ void measureInterSMLatency(latencys* result,
 			time_elapsed_ns = (tsendop.tv_nsec-tsstart.tv_nsec);
 	 		time_elapsed_ns += 1000000000*(tsendop.tv_sec-tsstart.tv_sec);
 	 		latency_lat[i]=time_elapsed_ns;
+	 		e=cudaGetLastError();                                 
+ 			if(e!=cudaSuccess) {                                              
+	   			fprintf(stderr,"Cuda failure %s:%d: '%s'\n",__FILE__,__LINE__,cudaGetErrorString(e)); 
+	   			for(int deviceid=0; deviceid<gpu_count;deviceid++)
+				{
+					cudaSetDevice(deviceid);	
+		 			cudaDeviceReset();
+				}
+				errorcode=-1;
+				break;
+	 		}
 
 		}
-		cudaCheckError();
+		// cudaCheckError();
 		getStatistics(result->mean_lat, result->s_lat, latency_lat+1, SIZE-1);
 
 		for(int deviceid=0; deviceid<gpu_count;deviceid++)
 		{
 			cudaSetDevice(deviceid);	
-			cudaCheckError();
-			cudaStreamDestroy(mstream[deviceid]);
+ 			cudaStreamDestroy(mstream[deviceid]);
 			cudaFree(d_out[deviceid]);
 		}
 
@@ -159,6 +195,21 @@ void measureInterSMLatency(latencys* result,
 		free(packedKernelArgs);
 		free(launchParamsList);
 		free(d_out);
+		// e=cudaGetLastError();                                 
+ 	// 	if(e!=cudaSuccess) {                                              
+  //  			fprintf(stderr,"Cuda failure %s:%d: '%s'\n",__FILE__,__LINE__,cudaGetErrorString(e)); 
+		// 	errorcode=-1;
+ 	// 	}
+ 		if(errorcode!=1)
+ 		{
+ 			for(int deviceid=0; deviceid<gpu_count;deviceid++)
+			{
+				cudaSetDevice(deviceid);	
+	 			cudaDeviceReset();
+			}
+			return -1;
+ 		}
+ 		return 1;
 	}
 }
 //3. mearsure kernel latency 

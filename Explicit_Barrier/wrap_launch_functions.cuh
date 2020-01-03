@@ -8,19 +8,29 @@ typedef void (*nKernel)();
 typedef void (*fbaseKernel)(float,float,double*,unsigned int*,unsigned int*, unsigned int);
 
 #ifndef DEF_WRAP_LAUNCH_FUNCTION
-void __forceinline__ cooperative_launch(fbaseKernel func,
-	unsigned int blockPerGPU,unsigned int threadPerBlock, void** KernelArgs, 
-	unsigned int GPU_count=1, cudaLaunchParams *launchParamsList=NULL)
-{
-	cudaLaunchCooperativeKernel((void*)func, blockPerGPU,threadPerBlock,KernelArgs,32,0);
-}
+
 void __forceinline__ traditional_launch(fbaseKernel func,
 	unsigned int blockPerGPU,unsigned int threadPerBlock, void** KernelArgs, 
 	unsigned int GPU_count=1, cudaLaunchParams *launchParamsList=NULL)
 {
+	if(NULL==KernelArgs&&NULL!=launchParamsList)
+	{
+		KernelArgs=launchParamsList[0].args;
+	}
 	func<<<blockPerGPU,threadPerBlock>>>(((float*)KernelArgs[0])[0],((float*)KernelArgs[1])[0],
 		((double**)KernelArgs[2])[0],((unsigned int**)KernelArgs[3])[0],
 		((unsigned int**)KernelArgs[4])[0],(( unsigned int*)KernelArgs[5])[0]);
+}
+
+void __forceinline__ cooperative_launch(fbaseKernel func,
+	unsigned int blockPerGPU,unsigned int threadPerBlock, void** KernelArgs, 
+	unsigned int GPU_count=1, cudaLaunchParams *launchParamsList=NULL)
+{
+	if(NULL==KernelArgs&&NULL!=launchParamsList)
+	{
+		KernelArgs=launchParamsList[0].args;
+	}
+	cudaLaunchCooperativeKernel((void*)func, blockPerGPU,threadPerBlock,KernelArgs,32,0);
 }
 
 void __forceinline__ multi_cooperative_launch(fbaseKernel func,
