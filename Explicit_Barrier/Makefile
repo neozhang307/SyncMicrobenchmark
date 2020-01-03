@@ -12,13 +12,17 @@ all: $(EXECUTABLE)
 
 ../share/util.o: ../share/util.cpp
 	g++ $(GCCFLAG) -c -o $@ $<
+
 	
+measurement.o: measurement.cu 
+	nvcc -x cu $(CODEFLAG) -dc -o $@ $^
+
 Explicit_Barrier_Kernel.o: Explicit_Barrier_Kernel.cu 
 	nvcc -x cu $(CODEFLAG) -dc -o $@ $^
 
 Test_Repeat_Influence.o: Test_Repeat_Influence.cu 
 	nvcc -x cu $(CODEFLAG) -dc -o $@ $^
 
-TestRepeat: Test_Repeat_Influence.o Explicit_Barrier_Kernel.o ../share/util.o
+TestRepeat: Test_Repeat_Influence.o Explicit_Barrier_Kernel.o measurement.o ../share/util.o 
 	nvcc $(CODEFLAG) -o $@ $^
 

@@ -66,7 +66,19 @@ void showFusedResult(latencys result_bl_bk, latencys result_bl_mk, latencys resu
   unsigned int gpu_count,
   unsigned int block_perGPU, unsigned int thread_perBlock, 
   unsigned int basicDEP, unsigned int moreDEP, unsigned int idea_basic_workload);
+void prepare_showRepeatKernelLatency();
+void showRepeatKernelLatency(latencys result, latencys clk_result,
+  unsigned int difference);
 
 double computeAddLat(latencys result_basic, latencys result_more, unsigned int difference);
 double computeAddLats(latencys result_basic, latencys result_more, unsigned int difference);
+double computeAvgLatCycle(latencys g_result_basic, latencys g_result_more, unsigned int difference);
+double computeAvgLatCycles(latencys g_result_basic, latencys g_result_more, unsigned int difference);
+void GetLatencyOfSM(
+            unsigned int& Min_Latency,//count when last thread start sync first thread finish sync
+            unsigned int& Max_Latency,//count when first thread start sync last thread finish sync
+            unsigned int totalWarpCount, //warp number in a synchronization group
+            unsigned int* time_stamp, //time stamp from kernel, size=groupCount*warpPerGroup
+            unsigned int* idx,  //idx from each warp, size=groupCount*warpPerGroup
+            unsigned int smid);//the sm to measure
 void nxtline();

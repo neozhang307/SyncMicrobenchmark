@@ -26,12 +26,12 @@ unsigned long ToUInt(char* str)
 
 char* genFileName(char* filename, const char *  base,  const char *  deviceName)
 {
-	strcpy (filename,base);
+  strcpy (filename,base);
     strcat(filename," ");
-	strcat(filename,deviceName);
+  strcat(filename,deviceName);
 
-	char *ptr = filename;    
-	while (*ptr)
+  char *ptr = filename;    
+  while (*ptr)
     {
         if (*ptr == ' ')
             *ptr = '_';
@@ -120,30 +120,9 @@ void getIdenticalGPUs(int num_of_gpus, std::set<int> &identicalGPUs, bool coalau
   return;
 }
 
-void getStatistics(double &mean, double &s,
-  double* list, unsigned int size)
-{
-  if(size<=0)
-  {
-    mean=0;
-    s=0;
-    return;
-  }
-  double sum = 0; 
-  for(int i=0; i<size; i++)
-  {
-    sum+=list[i];
-  }
-  mean=sum/size;
 
-  sum=0;
-  for(int i=0; i<size; i++)
-  {
-    sum+=pow(list[i]-mean,2);
-  }
 
-  s=sqrt(sum/(size-1)); 
-}
+void nxtline(){printf("\n");};
 
 void showlatency(latencys g_result)
 {
@@ -190,7 +169,17 @@ void showAdditionalLatency(latencys g_result_basic, latencys g_result_more,const
 
 }
 
-
+void prepare_showRepeatKernelLatency()
+{
+  printf("method\trep\tblk\tthrd\ttile\tm(cycle)\ts(cycle)\tm(ns)\ts(ns)\tm(ave_cycle)\ts(ave_cycle)\n"); 
+}
+void showRepeatKernelLatency(latencys result, latencys clk_result,unsigned int difference)
+{
+  showlatency_cycle(result);\
+  showlatency_ttl(result);\
+  printf("%f\t%f\t", computeAvgLatCycle(clk_result,result,difference),computeAvgLatCycles(clk_result,result,difference));\
+  nxtline();\
+}
 void prepare_showFusedResult()
 {
   printf("method\tGPUCount\trep\tblk\tthrd\tidea(wkld)\tm(wkld)\ts(wkld)\tm(ovh)\ts(ovh)\n"); 
@@ -224,4 +213,68 @@ double computeAddLats(latencys g_result_basic, latencys g_result_more, unsigned 
   return sqrt((g_result_more.s_lat*g_result_more.s_lat+g_result_basic.s_lat*g_result_basic.s_lat))/difference;
 }
 
-void nxtline(){printf("\n");};
+double computeAvgLatCycle(latencys g_result_basic, latencys g_result_more, unsigned int difference)//size=2
+{
+  return (g_result_more.latency_min-g_result_basic.latency_min)/difference;
+}
+double computeAvgLatCycles(latencys g_result_basic, latencys g_result_more, unsigned int difference)//size=2
+{
+  return sqrt((g_result_more.s_latency_min*g_result_more.s_latency_min+g_result_basic.s_latency_min*g_result_basic.s_latency_min))/difference;
+}
+
+
+
+void GetLatencyOfSM(
+            unsigned int& Min_Latency,//count when last thread start sync first thread finish sync
+            unsigned int& Max_Latency,//count when first thread start sync last thread finish sync
+            unsigned int totalWarpCount, //warp number in a synchronization group
+            unsigned int* time_stamp, //time stamp from kernel, size=groupCount*warpPerGroup
+            unsigned int* idx,  //idx from each warp, size=groupCount*warpPerGroup
+            unsigned int smid)//the sm to measure
+{
+  unsigned int basic_index=0;
+  if(smid==0)smid=idx[(basic_index)*2];
+  while(smid!=idx[(basic_index)*2])basic_index++;
+  unsigned int start_min = time_stamp[basic_index*2];
+  unsigned int end_min = time_stamp[basic_index*2+1];
+  unsigned int start_max = time_stamp[basic_index*2];
+  unsigned int end_max = time_stamp[basic_index*2+1];
+  basic_index++;
+  for(; basic_index < totalWarpCount; basic_index ++)
+  {
+    if(smid!=idx[(basic_index)*2])continue;
+    start_min=std::max(start_min,time_stamp[(basic_index)*2]);
+    end_min=std::min(end_min,time_stamp[(basic_index)*2+1]);
+
+    start_max=std::min(start_max,time_stamp[(basic_index)*2]);
+    end_max=std::max(end_max,time_stamp[(basic_index)*2+1]);
+  }
+  Min_Latency=end_min-start_min;
+  Max_Latency=end_max-start_max;
+}
+
+
+void getStatistics(double &mean, double &s,
+  double* list, unsigned int size)
+{
+  if(size<=0)
+  {
+    mean=0;
+    s=0;
+    return;
+  }
+  double sum = 0; 
+  for(int i=0; i<size; i++)
+  {
+    sum+=list[i];
+  }
+  mean=sum/size;
+
+  sum=0;
+  for(int i=0; i<size; i++)
+  {
+    sum+=pow(list[i]-mean,2);
+  }
+
+  s=sqrt(sum/(size-1)); 
+}
