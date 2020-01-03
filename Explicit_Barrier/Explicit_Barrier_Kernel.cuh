@@ -119,6 +119,8 @@ typedef void (*fbaseKernel)(float,float,double*,unsigned int*,unsigned int*, uns
 	__global__ void FUNC##32(type,type,double*,unsigned int*,unsigned int*, unsigned int);\
 	__global__ void FUNC##64(type,type,double*,unsigned int*,unsigned int*, unsigned int);\
 	__global__ void FUNC##128(type,type,double*,unsigned int*,unsigned int*, unsigned int);\
+	__global__ void FUNC##256(type,type,double*,unsigned int*,unsigned int*, unsigned int);\
+	__global__ void FUNC##2816(type,type,double*,unsigned int*,unsigned int*, unsigned int);\
 
 
 //warp level
@@ -151,3 +153,4 @@ FUNC_DDEP(k_base_kernel_MGCOM_float_DULL_DEP,float);//multi grid sync
 //null used for test gpu cycle latency
 __global__ void k_base_kernel_COM_float_DULL_DEP1(float,float,double*,unsigned int*,unsigned int*, unsigned int);
 
+__device__ uint get_smid(void);

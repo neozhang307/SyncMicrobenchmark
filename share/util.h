@@ -69,6 +69,15 @@ void showFusedResult(latencys result_bl_bk, latencys result_bl_mk, latencys resu
 void prepare_showRepeatKernelLatency();
 void showRepeatKernelLatency(latencys result, latencys clk_result,
   unsigned int difference);
+void prepare_showLatencyInSingleSM();
+void showLatencyInSingleSM(latencys basic, latencys result, const char* kernelname, 
+  unsigned int gpu_count, unsigned int rep,
+  unsigned int blockPerGPU, unsigned int threadPerBlock);
+void prepare_showThroughputInSingleSM();
+void showThroughputInSingleSM(latencys result, const char* kernelname, 
+  unsigned int gpu_count, unsigned int rep,
+  unsigned int blockPerGPU, unsigned int threadPerBlock, 
+  unsigned int smx_count, unsigned int tile);
 
 double computeAddLat(latencys result_basic, latencys result_more, unsigned int difference);
 double computeAddLats(latencys result_basic, latencys result_more, unsigned int difference);

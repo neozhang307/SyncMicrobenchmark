@@ -202,6 +202,33 @@ void showFusedResult(latencys result_bl_bk, latencys result_bl_mk, latencys resu
   //deduced launch overhead
 }
 
+void prepare_showLatencyInSingleSM()
+{
+  printf("method\tGPUCount\trep\tblk\tthrd\tm(avgcycle)\ts(avgcycle)\n");
+}
+
+void showLatencyInSingleSM(latencys basic, latencys result, const char* kernelname, 
+  unsigned int gpu_count, unsigned int rep,
+  unsigned int blockPerGPU, unsigned int threadPerBlock)
+{
+  printf("%s\t%u\t%u\t%u\t%u\t", kernelname,gpu_count,rep,blockPerGPU,threadPerBlock);
+  printf("%f\t%f\n", computeAvgLatCycle(basic,result,rep*2),computeAvgLatCycles(basic,result,rep*2));
+}
+
+void prepare_showThroughputInSingleSM()
+{
+  printf("method\tGPUCount\trep\tblk\tthrd\ttile\tm(ttl_latency)\tm(thrput)\n");
+}
+
+void showThroughputInSingleSM(latencys result, const char* kernelname, 
+  unsigned int gpu_count, unsigned int rep,
+  unsigned int blockPerGPU, unsigned int threadPerBlock, 
+  unsigned int smx_count, unsigned int tile)
+{
+  printf("%s\t%u\t%u\t%u\t%u\t%u\t", kernelname,gpu_count,rep,blockPerGPU,threadPerBlock,tile);
+  printf("%f\t%f\n", result.latency_max,(blockPerGPU/smx_count)*(threadPerBlock/32)*rep*2/result.latency_max);
+
+}
 
 double computeAddLat(latencys g_result_basic, latencys g_result_more, unsigned int difference)//size=2
 {
