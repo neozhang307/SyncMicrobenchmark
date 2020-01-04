@@ -9,7 +9,7 @@ EXECUTABLE=ImplicitBarrier
 
 all: $(EXECUTABLE) 
 
-measurement.o: measurement.cu
+../share/measurement.o: ../share/measurement.cu
 	nvcc -x cu $(CODEFLAG) -dc -o $@ $^
 ../share/util.o: ../share/util.cpp
 	g++ $(GCCFLAG) -c -o $@ $<
@@ -20,6 +20,6 @@ Implicit_Barrier_Sleep_Kernels.o: Implicit_Barrier_Sleep_Kernels.cu
 Implicit_Barrier.o: Implicit_Barrier.cu 
 	nvcc -x cu $(CODEFLAG) -dc -o $@ $^
 
-ImplicitBarrier: Implicit_Barrier.o Implicit_Barrier_Sleep_Kernels.o Implicit_Barrier_Null_Kernels.o measurement.o ../share/util.o
+ImplicitBarrier: Implicit_Barrier.o Implicit_Barrier_Sleep_Kernels.o Implicit_Barrier_Null_Kernels.o ../share/measurement.o ../share/util.o
 	nvcc $(CODEFLAG70) $(OMPFLAG) -o $@ $^
 

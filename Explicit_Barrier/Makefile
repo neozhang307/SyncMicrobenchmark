@@ -14,7 +14,7 @@ all: $(EXECUTABLE)
 	g++ $(GCCFLAG) -c -o $@ $<
 
 	
-measurement.o: measurement.cu 
+../share/measurement.o: ../share/measurement.cu 
 	nvcc -x cu $(CODEFLAG) -dc -o $@ $^
 
 Explicit_Barrier_Kernel.o: Explicit_Barrier_Kernel.cu 
@@ -30,11 +30,11 @@ Explicit_Barrier_IntraSM.o: Explicit_Barrier_IntraSM.cu
 Explicit_Barrier_InterSM.o: Explicit_Barrier_InterSM.cu 
 	nvcc -x cu $(CODEFLAG) -dc -o $@ $^
 
-TestRepeat: Test_Repeat_Influence.o Explicit_Barrier_Kernel.o measurement.o ../share/util.o 
+TestRepeat: Test_Repeat_Influence.o Explicit_Barrier_Kernel.o ../share/measurement.o ../share/util.o 
 	nvcc $(CODEFLAG) -o $@ $^
 
-BenchmarkIntraSM: Explicit_Barrier_IntraSM.o Explicit_Barrier_BigKernel.o Explicit_Barrier_Kernel.o measurement.o ../share/util.o 
+BenchmarkIntraSM: Explicit_Barrier_IntraSM.o Explicit_Barrier_BigKernel.o Explicit_Barrier_Kernel.o ../share/measurement.o ../share/util.o 
 	nvcc $(CODEFLAG) -o $@ $^
 
-BenchmarkInterSM: Explicit_Barrier_InterSM.o Explicit_Barrier_BigKernel.o Explicit_Barrier_Kernel.o measurement.o ../share/util.o 
+BenchmarkInterSM: Explicit_Barrier_InterSM.o Explicit_Barrier_BigKernel.o Explicit_Barrier_Kernel.o ../share/measurement.o ../share/util.o 
 	nvcc $(CODEFLAG) -o $@ $^

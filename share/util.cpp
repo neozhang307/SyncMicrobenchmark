@@ -229,7 +229,21 @@ void showThroughputInSingleSM(latencys result, const char* kernelname,
   printf("%f\t%f\n", result.latency_max,(blockPerGPU/smx_count)*(threadPerBlock/32)*rep*2/result.latency_max);
 
 }
+void prepare_showLatencyInterSM()
+{
+    printf("method\tGPUCount\tbasicdec\tmoredec\tblk\tthrd\t"); 
+    printf("m(basic_ttl)\ts(basic_ttl)\tm(more_ttl)\ts(more_ttl)\t");
+    printf("m(avginstr)\ts(avginstr)\n"); 
+}
 
+void showLatencyInterSM(latencys result_basic,latencys result_more, const char* kernelname, 
+              unsigned int basic_dec, unsigned int more_dec,
+              unsigned int gpu_count, unsigned int blockPerGPU, unsigned int threadPerBlock)
+{
+    printf("%s\t%u\t%u\t%u\t%u\t%u\t", kernelname,gpu_count,basic_dec, more_dec,blockPerGPU,threadPerBlock);
+  printf("%f\t%f\t%f\t%f\t",result_basic.mean_lat,result_basic.s_lat,result_more.mean_lat,result_more.s_lat);
+  printf("%f\t%f\n",(result_more.mean_lat-result_basic.mean_lat)/(more_dec-basic_dec)/2,sqrt(result_basic.s_lat*result_basic.s_lat+result_more.s_lat*result_more.s_lat)/(more_dec-basic_dec)/2);
+}
 double computeAddLat(latencys g_result_basic, latencys g_result_more, unsigned int difference)//size=2
 {
   return (g_result_more.mean_lat-g_result_basic.mean_lat)/difference;

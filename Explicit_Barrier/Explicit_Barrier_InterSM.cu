@@ -1,11 +1,11 @@
-#include "measurement.cuh"
 #include "Explicit_Barrier_Kernel.cuh"
 
 #include "../share/util.h"
+#include "../share/measurement.cuh"
 
 
 
-void benchmarkLatencyInterSM(launchfunction run_func, 
+void benchmarkLatencyInterSM(launchfunction_rkernel run_func, 
 							fbaseKernel basic_kernel, fbaseKernel more_kernel, 
 							const char* kernelname,
 							unsigned int basic_dec, unsigned int more_dec,
@@ -29,6 +29,7 @@ void benchmarkLatencyInterSM(launchfunction run_func,
 				1,
 				1, 32);
 
+	prepare_showLatencyInterSM();
 	for(unsigned int basic=1; basic<=uplimit; basic*=2)
 	{
 		unsigned int blockPerGPU=smx_count*basic;
@@ -45,12 +46,12 @@ void benchmarkLatencyInterSM(launchfunction run_func,
 				gpu_count,
 				blockPerGPU, threadPerBlock);
 			if(errorcode<0)continue;
-  			printf("%s\t%u\t%u\t%u\t%u\t%u\t", kernelname,gpu_count,basic_dec, more_dec,blockPerGPU,threadPerBlock);
-			printf("%f\t%f\t%f\t%f\t",result_basic.mean_lat,result_basic.s_lat,result_more.mean_lat,result_more.s_lat);
-			printf("%f\t%f\n",(result_more.mean_lat-result_basic.mean_lat)/(more_dec-basic_dec)/2,sqrt(result_basic.s_lat*result_basic.s_lat+result_more.s_lat*result_more.s_lat)/(more_dec-basic_dec)/2);
+			showLatencyInterSM(result_basic, result_more, kernelname, 
+							basic_dec, more_dec,
+							gpu_count, blockPerGPU, threadPerBlock);
 
-			//showThroughputInSingleSM(result, kernelname, 
-			//		1, 128, blockPerGPU, threadPerBlock, smx_count,32);
+
+
 		}
 	}
 }
@@ -62,13 +63,12 @@ int main(int argc, char **argv)
   	cudaGetDeviceProperties(&deviceProp, 0);
   	unsigned int	smx_count = deviceProp.multiProcessorCount;
 	//test the latency of block through all possible group size
-	// benchmarkLatencyInterSM(cooperative_launch, 
-	// 						k_base_kernel_GCOM_float_DULL_DEP256, k_base_kernel_GCOM_float_DULL_DEP2816, 
-	// 						"grid_sync",
-	// 						256, 2816,
-	// 						smx_count, 32,
-	// 						1);
-	// int gpu_count=2;
+	benchmarkLatencyInterSM(cooperative_launch, 
+							k_base_kernel_GCOM_float_DULL_DEP256, k_base_kernel_GCOM_float_DULL_DEP2816, 
+							"grid_sync",
+							256, 2816,
+							smx_count, 32,
+							1);
 	int gpu_count=1;
 	if(argc>=2)
 	{

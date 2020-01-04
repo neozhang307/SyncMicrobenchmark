@@ -1,9 +1,51 @@
 // #include "Implicit_Barrier_Kernel.cuh"
 #include "repeat.h"
 
+typedef void (*nKernel)();
+typedef void (*fbaseKernel)(float,float,double*,unsigned int*,unsigned int*, unsigned int);
+
+typedef void(*launchfunction_nkernel)(nKernel, 
+	unsigned int, unsigned int, 
+	unsigned int, cudaLaunchParams*);
+
+typedef void(*launchfunction_rkernel)(fbaseKernel, 
+	unsigned int, unsigned int, 
+	void**, unsigned int, 
+	cudaLaunchParams*);
 
 #ifndef DEF_WRAP_LAUNCH_FUNCTION
-typedef void(*launchfunction)(nKernel, unsigned int, unsigned int, unsigned int, cudaLaunchParams*);
+
+void __forceinline__ traditional_launch(fbaseKernel func,
+	unsigned int blockPerGPU,unsigned int threadPerBlock, void** KernelArgs, 
+	unsigned int GPU_count=1, cudaLaunchParams *launchParamsList=NULL)
+{
+	if(NULL==KernelArgs&&NULL!=launchParamsList)
+	{
+		KernelArgs=launchParamsList[0].args;
+	}
+	func<<<blockPerGPU,threadPerBlock>>>(((float*)KernelArgs[0])[0],((float*)KernelArgs[1])[0],
+		((double**)KernelArgs[2])[0],((unsigned int**)KernelArgs[3])[0],
+		((unsigned int**)KernelArgs[4])[0],(( unsigned int*)KernelArgs[5])[0]);
+}
+
+void __forceinline__ cooperative_launch(fbaseKernel func,
+	unsigned int blockPerGPU,unsigned int threadPerBlock, void** KernelArgs, 
+	unsigned int GPU_count=1, cudaLaunchParams *launchParamsList=NULL)
+{
+	if(NULL==KernelArgs&&NULL!=launchParamsList)
+	{
+		KernelArgs=launchParamsList[0].args;
+	}
+	cudaLaunchCooperativeKernel((void*)func, blockPerGPU,threadPerBlock,KernelArgs,32,0);
+}
+
+void __forceinline__ multi_cooperative_launch(fbaseKernel func,
+	unsigned int blockPerGPU, unsigned int threadPerBlock, void** KernelArgs,
+	unsigned int GPU_count=1, cudaLaunchParams *launchParamsList=NULL)
+{
+	cudaLaunchCooperativeKernelMultiDevice(launchParamsList, GPU_count);
+}
+
 
 void __forceinline__ traditional_launch(nKernel func, unsigned int blockPerGPU,unsigned int threadPerBlock, unsigned int GPU_count=1, cudaLaunchParams *launchParamsList=NULL)
 {

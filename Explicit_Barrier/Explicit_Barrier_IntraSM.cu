@@ -1,7 +1,7 @@
-#include "measurement.cuh"
 #include "Explicit_Barrier_Kernel.cuh"
 
 #include "../share/util.h"
+#include "../share/measurement.cuh"
 
 
 void benchmarkLatencyInSingleSM(fbaseKernel kernel, const char* kernelname)
