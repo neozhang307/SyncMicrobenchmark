@@ -24,10 +24,10 @@ void Test_Workload_Influence(unsigned int block_perGPU, unsigned int thread_perB
 
 void Test_Null_Kernel(unsigned int block_perGPU, unsigned int thread_perBlock);
 
-template <int gpu_count>
-void Test_Null_Kernel_MGPU(unsigned int block_perGPU, unsigned int thread_perBlock);
+// template <int gpu_count>
+void Test_Null_Kernel_MGPU(unsigned int block_perGPU, unsigned int thread_perBlock, unsigned int gpu_count);
 
 void Test_Sleep_Kernel(unsigned int block_perGPU, unsigned int thread_perBlock);
 
-template <int gpu_count>
-void Test_Sleep_Kernel_MGPU(unsigned int block_perGPU, unsigned int thread_perBlock);
+// template <int gpu_count>
+void Test_Sleep_Kernel_MGPU(unsigned int block_perGPU, unsigned int thread_perBlock, unsigned int gpu_count);

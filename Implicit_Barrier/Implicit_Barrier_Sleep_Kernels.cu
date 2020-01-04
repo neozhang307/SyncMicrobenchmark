@@ -34,11 +34,6 @@ N_KERNEL(200);
 //to study the relationship between kernel total latency and execution latency
 
 
-//#define PACKED_SLEEP_TEST(callfunc,basickernel,fusedkernel, gpu_count, block_perGPU, thread_perBlock,idea_workload); \
-	TEST_ADDITIONAL_LATENCY(callfunc, basickernel,1,128,gpu_count,block_perGPU,thread_perBlock);\
-	TEST_ADDITIONAL_LATENCY(callfunc, fusedkernel,1,128,gpu_count,block_perGPU,thread_perBlock);\
-	TEST_FUSED_KERNEL_1V16_DIFERENCE(callfunc, basickernel, fusedkernel,1,16,gpu_count, block_perGPU,thread_perBlock,idea_workload);\
-
 #define PACKED_SLEEP_TEST(callfunc,basickernel,fusedkernel, gpu_count, block_perGPU, thread_perBlock,idea_workload); \
 	TEST_FUSED_KERNEL_1V16_DIFERENCE(callfunc, basickernel, fusedkernel,1,16,gpu_count, block_perGPU,thread_perBlock,idea_workload);\
 
@@ -55,8 +50,8 @@ void Test_Sleep_Kernel(unsigned int block_perGPU, unsigned int thread_perBlock)
 }
 
 
-template <int gpu_count>
-void Test_Sleep_Kernel_MGPU(unsigned int block_perGPU, unsigned int thread_perBlock)
+// template <int gpu_count>
+void Test_Sleep_Kernel_MGPU(unsigned int block_perGPU, unsigned int thread_perBlock, unsigned int gpu_count)
 {
 	printf("_______________________________________________________________________\n");
 	printf("Fuse Sleep Kernel for multi-GPU\n");
@@ -131,17 +126,6 @@ void Test_Sleep_Kernel_MGPU(unsigned int block_perGPU, unsigned int thread_perBl
 	}
 	free(result);
 }
-
-
-
-template void Test_Sleep_Kernel_MGPU<1>(unsigned int block_perGPU, unsigned int thread_perBlock);
-template void Test_Sleep_Kernel_MGPU<2>(unsigned int block_perGPU, unsigned int thread_perBlock);
-template void Test_Sleep_Kernel_MGPU<3>(unsigned int block_perGPU, unsigned int thread_perBlock);
-template void Test_Sleep_Kernel_MGPU<4>(unsigned int block_perGPU, unsigned int thread_perBlock);
-template void Test_Sleep_Kernel_MGPU<5>(unsigned int block_perGPU, unsigned int thread_perBlock);
-template void Test_Sleep_Kernel_MGPU<6>(unsigned int block_perGPU, unsigned int thread_perBlock);
-template void Test_Sleep_Kernel_MGPU<7>(unsigned int block_perGPU, unsigned int thread_perBlock);
-template void Test_Sleep_Kernel_MGPU<8>(unsigned int block_perGPU, unsigned int thread_perBlock);
 
 
 

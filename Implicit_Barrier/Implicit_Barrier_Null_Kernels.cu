@@ -61,8 +61,7 @@ void Test_Null_Kernel(unsigned int block_perGPU, unsigned int thread_perBlock)
 		TEST_ADDITIONAL_LATENCY(callfunc, null_kernel, 1, 128, 8, block_perGPU, thread_perBlock);\
 	}\
 
-template <int gpu_count>
-void Test_Null_Kernel_MGPU(unsigned int block_perGPU, unsigned int thread_perBlock)
+void Test_Null_Kernel_MGPU(unsigned int block_perGPU, unsigned int thread_perBlock, unsigned int gpu_count)
 {
 
 	printf("_______________________________________________________________________\n");
@@ -76,17 +75,6 @@ void Test_Null_Kernel_MGPU(unsigned int block_perGPU, unsigned int thread_perBlo
 
 	free(result);
 }
-
-
-template void Test_Null_Kernel_MGPU<1>(unsigned int block_perGPU, unsigned int thread_perBlock);
-template void Test_Null_Kernel_MGPU<2>(unsigned int block_perGPU, unsigned int thread_perBlock);
-template void Test_Null_Kernel_MGPU<3>(unsigned int block_perGPU, unsigned int thread_perBlock);
-template void Test_Null_Kernel_MGPU<4>(unsigned int block_perGPU, unsigned int thread_perBlock);
-template void Test_Null_Kernel_MGPU<5>(unsigned int block_perGPU, unsigned int thread_perBlock);
-template void Test_Null_Kernel_MGPU<6>(unsigned int block_perGPU, unsigned int thread_perBlock);
-template void Test_Null_Kernel_MGPU<7>(unsigned int block_perGPU, unsigned int thread_perBlock);
-template void Test_Null_Kernel_MGPU<8>(unsigned int block_perGPU, unsigned int thread_perBlock);
-
 
 // int main(int argc, char **argv)
 // {
