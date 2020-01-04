@@ -7,12 +7,19 @@ This work aims at characterizing the synchronization methods in CUDA. It mainly 
 2. Primitive Synchronization Methods in Nvidia GPUs introduced in CUDA 9.0:
   * Warp level, Thread block level and grid level synchronization.
   * Multi-grid synchronization for Multi-GPU synchronization.
-  
+## Requirements
+ CUDA 9.0
+ sm_60 for most of measurements
+ sm_70 for sleep instruction involved measurements.
+ 
 ## Implicit Barrier
 ### Compile
-Directly compile with make file in Implicit_Barrier folder
+Directly compile with makefile in Implicit_Barrier folder
 
 The sleep function is only available after sm_70. We tried to use other instruction to control the kernel execute latency, but the result is not so stable as sleep instruction, and larger than sleep instruction.
+### Input explaination
+ * ImplicitBarrier \[gpu_count\]
+ * gpu_count is 2 by default. When testing multi-gpu related latencys, the experiments would iterate from 1 to gpu_count.
 ### Output explaination
 
 #### Null Kernel 
@@ -47,7 +54,76 @@ Just to show how additioanl latency tested is related to the real kernel executi
 Details is explained in the Use_Microbenchmark_To_Better_Understand_The_Overhead_Of_CUDA_Kernels__Poster_.pdf in the same folder.
 
 ## Explicit Barrier
-TBC
+### Compile
+Directly compile with makefile in Explicit_Barrier folder. Three executable file will be created:
+* TestRepeat
+* BenchmarkIntraSM
+* BenchmarkInterSM
+
+#### TestRepeat
+Used to show if repeating an synchronization instruction will influence the performance itself
+
+The result shows that there is no influece to shufl, block sync, and grid level syncs. But for warp level syncs, this would happen, probable bacause current implementation is based on software codes, repeat too much times will cause instruction overflow, harming the performance.
+
+##### Execution
+./TestRepeat
+
+##### Output
+* method: kernel function name
+* rep: repeat instruction times
+* blk: griddim
+* thrd: blockdim
+* tile: control the group size of coalesced group and tile group
+* m(cycle) s(cycle): mean and standard variation of total instruction execution
+* m(ns) s(ns): mean and standard variation of total kernel execution (meaningless here just for comparison)
+* m(ave_cycle) s(ave_cycle): mean and standard variation of average instruction(cycle)
+
+#### BenchmarkIntraSM
+Used to benchmark measurements that only need clock inside an SM
+
+Throughput of Warp level syncs and block sync
+Latency of block sync for each possible group
+
+##### Execution
+./BenchmarkIntraSM
+
+##### Output
+###### Latency
+* method: kernel function name
+* GPUcount: 1 
+* rep: repeat instruction times
+* blk: griddim
+* thrd: blockdim
+* m(ave_cycle) s(ave_cycle): mean and standard variation of average instruction(cycle)
+###### Throughput
+* method: kernel function name
+* GPUcount: 1 
+* rep: repeat instruction times
+* blk: griddim
+* thrd: blockdim
+* tile: used to control tile group size
+* m(ttl_latency): total latency for synchronization
+* m(thrput): throuput (warp/cycle) computed base on m(ttl_latency)
+
+#### BenchmarkInterSM
+Used to benchmark measurements involve several SMs
+
+Latency of grid level syncs
+
+##### Execution
+./BenchmarkInterSM \[gpu_count\]
+
+##### Output
+* method: kernel function name
+* GPUcount: GPU involved
+* basicrep: repeat instruction times in basic kernel
+* moredrep: repeat instruction times in more kernel
+* blk: griddim
+* thrd: blockdim
+* m(basic_ttl) s(basic_ttl): mean and standard variation of total kernel latency (ns) for executing basic kernel
+* m(more_ttl) s(more_ttl): mean and standard variation of total kernel latency (ns) for executing more kernel
+* m(avginstru) s(avginstr): mean and standard variation of average instruction (ns) deduced
+
 
 ## Citation
   This research will be published in IPDPS20 
