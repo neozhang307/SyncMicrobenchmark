@@ -1,7 +1,7 @@
 #include "Explicit_Barrier_Kernel.cuh"
 #include "../share/util.h" 
-#include "measurement.cuh"
-#include "wrap_launch_functions.cuh"
+#include "../share/measurement.cuh"
+#include "../share/wrap_launch_functions.cuh"
 
 
 

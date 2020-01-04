@@ -50,7 +50,6 @@ int main(int argc, char **argv)
   	cudaGetDeviceProperties(&deviceProp, 0);
   	unsigned int	smx_count = deviceProp.multiProcessorCount;
 	//test the latency of block through all possible group size
-	printf("");
 	benchmarkLatencyInSingleSM(k_base_kernel_BCOM_float_DULL_DEP128,"blocksync");
 	//test the throughput of warp and block through all possible group size
 	//warp level
