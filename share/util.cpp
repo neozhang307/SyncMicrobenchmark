@@ -231,7 +231,7 @@ void showThroughputInSingleSM(latencys result, const char* kernelname,
 }
 void prepare_showLatencyInterSM()
 {
-    printf("method\tGPUCount\tbasicdec\tmoredec\tblk\tthrd\t"); 
+    printf("method\tGPUCount\tbasicrep\tmorepre\tblk\tthrd\t"); 
     printf("m(basic_ttl)\ts(basic_ttl)\tm(more_ttl)\ts(more_ttl)\t");
     printf("m(avginstr)\ts(avginstr)\n"); 
 }
