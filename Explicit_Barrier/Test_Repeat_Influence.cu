@@ -5,7 +5,7 @@
 
 
 
-
+//easier to write MACRO here
 
 #define single(result,func,DEP,blockPerGPU,threadPerBlock,A,B,TILE) \
 	printf("%s\t%s\t%u\t%u\t%u\t",#func, #DEP, blockPerGPU, threadPerBlock, TILE);\
