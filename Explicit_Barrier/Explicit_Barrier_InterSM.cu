@@ -78,7 +78,7 @@ int main(int argc, char **argv)
 	{
 		benchmarkLatencyInterSM(multi_cooperative_launch, 
 							k_base_kernel_MGCOM_float_DULL_DEP256, k_base_kernel_GCOM_float_DULL_DEP2816, 
-							"grid_sync",
+							"multi_grid_sync",
 							256, 2816,
 							smx_count, 32,
 							1);
