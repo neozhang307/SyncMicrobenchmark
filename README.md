@@ -1,26 +1,26 @@
 # Sync_Microbenchmark
 ## Abstract
-This work aims at characterizing the synchronization methods in CUDA. It mainly includes two part:
-1. Non-primizive Synchronization:
+This work aims at characterizing the synchronization methods in CUDA. It mainly includes two-part:
+1. Non-primitive Synchronization:
   * Implicit Barrier, i.e. overhead of launching a kernel, including the new kernel launch function introduced for Cooperative Groups.
-  * Multi-GPU synchronization with OpenMP in single node.
+  * Multi-GPU synchronization with OpenMP in a single node.
 2. Primitive Synchronization Methods in Nvidia GPUs introduced in CUDA 9.0:
-  * Warp level, Thread block level and grid level synchronization.
+  * Warp level, Thread block level, and grid-level synchronization.
   * Multi-grid synchronization for Multi-GPU synchronization.
 ## Requirements
  CUDA 9.0
- sm_60 for most of measurements
+ sm_60 for most of the measurements
  sm_70 for sleep instruction involved measurements.
  
 ## Implicit Barrier
 ### Compile
-Directly compile with makefile in Implicit_Barrier folder
+Directly compile with the Makefile in Implicit_Barrier folder
 
-The sleep function is only available after sm_70. We tried to use other instruction to control the kernel execute latency, but the result is not so stable as sleep instruction, and larger than sleep instruction.
-### Input explaination
+The sleep function is only available after sm_70. We tried to use other instructions to control the kernel execute latency, but the result is not so stable as sleep instruction, and larger than sleep instruction.
+### Input explanation
  * ImplicitBarrier \[gpu_count\]
- * gpu_count is 2 by default. When testing multi-gpu related latencys, the experiments would iterate from 1 to gpu_count.
-### Output explaination
+ * gpu_count is 2 by default. When testing multi-GPU related latencies, the experiments would iterate from 1 to gpu_count.
+### Output explanation
 
 #### Null Kernel 
 * method: the method to do kernel launch \[traditional_launch|cooperative_launch|multi_cooperative_launch|single_omp_traditional_launch\]
@@ -35,11 +35,11 @@ The sleep function is only available after sm_70. We tried to use other instruct
 * m(avelaun) s(avelaun): mean and standard variation of average latency of each launch function, compute with m(laun)/rep
 * m(addl) s(addl): mean and standard variation of average additional latency for each additional launch function. By default this code use repeat 1 times and 128 times and compute by m(ttl_128)-m(ttl_1)/(128-1)
 
-By using "additional latency", it will be possible to eliminate the overhead of synchronization (which is really not neglitable when considering kernel overhead) and other unrelated parts. Details is explained in the Use_Microbenchmark_To_Better_Understand_The_Overhead_Of_CUDA_Kernels__Poster_.pdf in the same folder.
+By using "additional latency", it will be possible to eliminate the overhead of synchronization (which is not negligible when considering kernel overhead) and other unrelated parts. Details are explained in the Use_Microbenchmark_To_Better_Understand_The_Overhead_Of_CUDA_Kernels__Poster_.pdf in the same folder.
 
 #### Sleep Kernel (Fused Sleep Kernels to test the kernel overhead when kernel execution latency is long enough)
 * method: the method to do kernel launch \[traditional_launch|cooperative_launch|multi_cooperative_launch|single_omp_traditional_launch\]
-* GPUCount: how many gpu involved
+* GPUCount: how many GPU involved
 * rep: repeat calling launch function times for both the basic kernel and the fused kernel.
 * blk: griddim
 * thrd: blockdim
@@ -49,21 +49,21 @@ By using "additional latency", it will be possible to eliminate the overhead of 
 #### Workload Test
 The same of NULL KERNEL
 
-Just to show how additioanl latency tested is related to the real kernel execution latency. Before a certain point, increasing kernel execution latency would not affect the additional latency caused by additional kernel kernel. 
+Just to show how additioanl latency tested is related to the real kernel execution latency. Before a certain point, increasing kernel execution latency would not affect the additional latency caused by the additional kernel. 
 
-Details is explained in the Use_Microbenchmark_To_Better_Understand_The_Overhead_Of_CUDA_Kernels__Poster_.pdf in the same folder.
+Details are explained in the Use_Microbenchmark_To_Better_Understand_The_Overhead_Of_CUDA_Kernels__Poster_.pdf in the same folder.
 
 ## Explicit Barrier
 ### Compile
-Directly compile with makefile in Explicit_Barrier folder. Three executable file will be created:
+Directly compile with the Makefile in Explicit_Barrier folder. Three executable files will be created:
 * TestRepeat
 * BenchmarkIntraSM
 * BenchmarkInterSM
 
 #### TestRepeat
-Used to show if repeating an synchronization instruction will influence the performance itself
+Used to show if repeating a synchronization instruction will influence the performance itself
 
-The result shows that there is no influece to shufl, block sync, and grid level syncs. But for warp level syncs, this would happen, probable bacause current implementation is based on software codes, repeat too much times will cause instruction overflow, harming the performance.
+The result shows that the result of shufl, block sync and grid-level syncs become more accurate as the repeat times increase. But for warp level syncs, this would happen, probably because the current implementation is based on software codes, repeat too many times will cause instruction overflow, harming the performance.
 
 ##### Execution
 ./TestRepeat
@@ -108,7 +108,7 @@ Latency of block sync for each possible group
 #### BenchmarkInterSM
 Used to benchmark measurements involve several SMs
 
-Latency of grid level syncs
+Latency of grid-level syncs
 
 ##### Execution
 ./BenchmarkInterSM \[gpu_count\]
@@ -126,5 +126,10 @@ Latency of grid level syncs
 
 
 ## Citation
-  This research will be published in IPDPS20 
+  For the study of implicit barrier synchronization, please cite:
   
+  Lingqi Zhang, Mohamed Wahib, Satoshi Matsuoka. Understanding the Overheads of Launching CUDA Kernels. Poster presented at: Excellence in clinical practice. The 48th International Conference on Parallel Processing (ICPP 2019); 2019 August 5-8; Kyoto, Japan. 
+    
+  This research will be published in IPDPS20. Please cite:
+  
+  Lingqi Zhang, Mohamed Wahib, Haoyu Zhang, Satoshi Matsuoka. A Study of Single and Multi-device Synchronization Methods in Nvidia GPUs. InProceedings of the IPDPS 2020.
