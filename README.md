@@ -126,10 +126,7 @@ Latency of grid-level syncs
 
 
 ## Citation
-  For the study of implicit barrier synchronization, please cite:
-  
-  Lingqi Zhang, Mohamed Wahib, Satoshi Matsuoka. Understanding the Overheads of Launching CUDA Kernels. Poster presented at: The 48th International Conference on Parallel Processing (ICPP 2019); 2019 August 5-8; Kyoto, Japan. 
-    
+
   This research will be published in IPDPS20. Please cite:
   
   Lingqi Zhang, Mohamed Wahib, Haoyu Zhang, Satoshi Matsuoka. A Study of Single and Multi-device Synchronization Methods in Nvidia GPUs. InProceedings of the IPDPS 2020.
