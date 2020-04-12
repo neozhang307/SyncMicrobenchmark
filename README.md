@@ -61,7 +61,7 @@ Directly compile with the Makefile in Explicit_Barrier folder. Three executable 
 * BenchmarkInterSM
 
 #### TestRepeat
-Used to show if repeating a synchronization instruction will influence the performance itself
+To show if repeating a synchronization instruction will influence the performance itself
 
 The result shows that the result of shufl, block sync and grid-level syncs become more accurate as the repeat times increase. But for warp level syncs, this would happen, probably because the current implementation is based on software codes, repeat too many times will cause instruction overflow, harming the performance.
 
@@ -79,7 +79,7 @@ The result shows that the result of shufl, block sync and grid-level syncs becom
 * m(ave_cycle) s(ave_cycle): mean and standard variation of average instruction(cycle)
 
 #### BenchmarkIntraSM
-Used to benchmark measurements that only need clock inside an SM
+Benchmark measurements that only need clock inside an SM. Includes:
 
 Throughput of Warp level syncs and block sync
 Latency of block sync for each possible group
@@ -106,7 +106,7 @@ Latency of block sync for each possible group
 * m(thrput): throuput (warp/cycle) computed base on m(ttl_latency)
 
 #### BenchmarkInterSM
-Used to benchmark measurements involve several SMs
+Benchmark measurements involve several SMs
 
 Latency of grid-level syncs
 
