@@ -35,7 +35,7 @@ void benchmarkLatencyInterSM(launchfunction_rkernel run_func,
 		unsigned int blockPerGPU=smx_count*basic;
 		for(unsigned int threadPerBlock=32; threadPerBlock<=1024; threadPerBlock*=2)
 		{
-			if(basic*threadPerBlock>2048)continue;//or can not launch the kernel
+			if(basic*threadPerBlock>=2048)continue;//or can not launch the kernel
 			errorcode=measureInterSMLatency(&result_basic, 
 				run_func, basic_kernel, 
 				gpu_count,
