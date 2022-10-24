@@ -126,6 +126,8 @@ Latency of grid-level syncs
 * m(more_ttl) s(more_ttl): mean and standard variation of total kernel latency (ns) for executing more kernel
 * m(avginstru) s(avginstr): mean and standard variation of average instruction (ns) deduced
 
+## Side note: 
+CUDA 11.5 marked multi-grid synchronization API as deprecated. But it seems that there is no new implementation yet.
 
 ## Citation
 
