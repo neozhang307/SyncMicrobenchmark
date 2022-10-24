@@ -17,7 +17,7 @@ void benchmarkLatencyInSingleSM(fbaseKernel kernel, const char* kernelname)
 	for(unsigned int threadPerBlock=32; threadPerBlock<=1024; threadPerBlock*=2)
 	{
 		measureIntraSMLatency(&result,cooperative_launch,kernel,blockPerGPU,threadPerBlock,2,2,32);
-		showLatencyInSingleSM(basic, result, kernelname, 1, 256, blockPerGPU, threadPerBlock);
+		showLatencyInSingleSM(basic, result, kernelname, 1, 128, blockPerGPU, threadPerBlock);
 	}
 }
 
@@ -51,6 +51,7 @@ int main(int argc, char **argv)
   	unsigned int	smx_count = deviceProp.multiProcessorCount;
 	//test the latency of block through all possible group size
 	benchmarkLatencyInSingleSM(k_base_kernel_BCOM_float_DULL_DEP128,"blocksync");
+	benchmarkLatencyInSingleSM(k_base_kernel_T32SHU_float_EQUAL_DEP128,"tile_shufl");
 	//test the throughput of warp and block through all possible group size
 	//warp level
 	benchmarkThroughputInSingleSM(k_base_kernel_T32COM_float_DULL_DEP128,"tile_sync",
