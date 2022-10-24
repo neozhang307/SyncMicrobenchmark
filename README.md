@@ -7,6 +7,8 @@ This work aims at characterizing the synchronization methods in CUDA. It mainly 
 2. Primitive Synchronization Methods in Nvidia GPUs introduced in CUDA 9.0:
   * Warp level, Thread block level, and grid-level synchronization.
   * Multi-grid synchronization for Multi-GPU synchronization.
+
+PLUS, for stable result, please avoid using dynamic frequency. 
 ## Requirements
  CUDA 9.0
  sm_60 for most of the measurements
@@ -47,9 +49,9 @@ By using "additional latency", it will be possible to eliminate the overhead of 
 * m(wkld) s(wkld): the basic workload deduce from the measurements. 
 
 #### Workload Test
-The same of NULL KERNEL
+The same as NULL KERNEL. Using "Sleep" to act as "workload"
 
-Just to show how additioanl latency tested is related to the real kernel execution latency. Before a certain point, increasing kernel execution latency would not affect the additional latency caused by the additional kernel. 
+Just to show how additioanl latency tested is related to the real kernel execution latency. Default sequencing is "(0 1 2 4 8 16 32 64 128)X2000ns". Before a certain point, increasing kernel execution latency would not affect the additional latency caused by the additional kernel (imagine a pipeline when pipeline is full, the most timeconsuming step mainly influence the performance of the whole system. Just to help understanding, we do not know whether a "pipeline" exist, especially in the situation of multi-grid launch). 
 
 Details are explained in the Use_Microbenchmark_To_Better_Understand_The_Overhead_Of_CUDA_Kernels__Poster_.pdf in the same folder.
 
@@ -124,6 +126,8 @@ Latency of grid-level syncs
 * m(more_ttl) s(more_ttl): mean and standard variation of total kernel latency (ns) for executing more kernel
 * m(avginstru) s(avginstr): mean and standard variation of average instruction (ns) deduced
 
+## Side note: 
+CUDA 11.5 marked multi-grid synchronization API as deprecated. But it seems that there is no new implementation yet.
 
 ## Citation
 
