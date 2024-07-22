@@ -1,7 +1,7 @@
 
 
-CODEFLAG=-gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 
-CODEFLAG70=-arch sm_70
+CODEFLAG=-gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_90,code=sm_90
+CODEFLAG70=-gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_90,code=sm_90
 CODEFLAG60=-arch sm_60
 GCCFLAG=-lcudart -L/usr/local/cuda/lib64 -I/usr/local/cuda/include
 OMPFLAG=-Xcompiler -fopenmp
