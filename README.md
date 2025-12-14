@@ -36,7 +36,33 @@ Directly compile with the Makefile in Implicit_Barrier folder.
 
 The sleep function is only available after sm_70.
 
-### Output explanation
+### run_benchmark.sh Output
+
+The script displays kernel launch overhead measurements. Here's how each value is computed:
+
+#### 1. Empty Kernel Launch Overhead
+
+Measures the pure overhead of launching an empty kernel (no actual work).
+
+| Metric | Computation |
+|--------|-------------|
+| **Total Latency** | Wall-clock time from before `cudaLaunchKernel` to after `cudaDeviceSynchronize` |
+| **API Call Overhead** | Wall-clock time of the launch API call only (before synchronization) |
+| **Per-kernel overhead** | `(Total_128_kernels - Total_1_kernel) / 127` — uses difference method to isolate per-kernel cost |
+
+The difference method eliminates fixed costs (driver initialization, synchronization overhead) by comparing 1 vs 128 kernel launches.
+
+#### 2. Sleep Kernel Test
+
+Tests overhead when kernels have actual work (5000 ns sleep).
+
+| Metric | Computation |
+|--------|-------------|
+| **Ideal workload** | Expected execution time based on sleep duration |
+| **Measured workload** | `(fused_kernel_time - basic_kernel_time) / (fused_reps - basic_reps)` |
+| **Launch overhead** | `measured_workload - ideal_workload` — the extra time beyond computation |
+
+### Raw Output explanation
 
 #### Null Kernel
 * method: the method to do kernel launch \[traditional_launch|cooperative_launch\]
@@ -75,6 +101,38 @@ Directly compile with the Makefile in Explicit_Barrier folder. Three executable 
 * TestRepeat
 * BenchmarkIntraSM
 * BenchmarkInterSM
+
+### run_benchmark.sh Output
+
+The script displays explicit synchronization overhead measurements. Here's how each value is computed:
+
+#### 1. Intra-SM Synchronization Latency
+
+Measures synchronization latency within a single SM using GPU clock cycles.
+
+| Metric | Computation |
+|--------|-------------|
+| **Block sync latency (cycles)** | GPU `clock()` timestamps around 128 repetitions of `__syncthreads()`, averaged: `(end_cycle - start_cycle) / (128 * 2)` |
+| **Throughput (ops/cycle)** | `(blocks/SM_count) * (threads/32) * repetitions * 2 / total_cycles` — measures how many sync operations complete per cycle |
+
+The latency test uses a single block to measure pure synchronization cost. The throughput test uses multiple blocks to measure scalability.
+
+#### 2. Inter-SM Synchronization (Grid Sync)
+
+Measures grid-level synchronization latency across all SMs using cooperative launch.
+
+| Metric | Computation |
+|--------|-------------|
+| **avg_sync_latency (ns)** | `(more_kernel_time - basic_kernel_time) / (more_reps - basic_reps) / 2` |
+
+Where:
+- `basic_kernel`: 256 repetitions of `grid_group.sync()`
+- `more_kernel`: 2816 repetitions of `grid_group.sync()`
+- Division by 2 accounts for the sync pattern (sync before and after each operation)
+
+The difference method isolates the per-sync cost by eliminating kernel launch overhead and other fixed costs.
+
+### Raw Output explanation
 
 #### TestRepeat
 To show if repeating a synchronization instruction will influence the performance itself
