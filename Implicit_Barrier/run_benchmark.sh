@@ -50,6 +50,17 @@ echo "$EMPTY_KERNEL" | awk '
     printf "  Per-kernel overhead: %7.2f ns  ★\n", $16
     printf "\n"
 }
+/^cuda_graph_launch.*\t1\t48\t/ {
+    printf "CUDA Graph Launch (1 node):\n"
+    printf "  Total Latency:      %8.2f ns\n", $12
+    printf "  API Call Overhead:  %8.2f ns\n", $10
+}
+/^cuda_graph_launch.*\t128\t48\t/ {
+    printf "CUDA Graph Launch (128 nodes):\n"
+    printf "  Total Latency:      %8.2f ns\n", $12
+    printf "  Per-kernel overhead: %7.2f ns  ★\n", $16
+    printf "\n"
+}
 '
 
 echo "============================================================"
@@ -77,6 +88,13 @@ echo "$SLEEP_KERNEL" | awk '
     printf "  Launch overhead:     %8.2f ns  ★\n", $9
     printf "\n"
 }
+/^cuda_graph_launch.*1:16/ {
+    printf "CUDA Graph Launch:\n"
+    printf "  Ideal workload:      %8.2f ns\n", $6
+    printf "  Measured workload:   %8.2f ns\n", $7
+    printf "  Launch overhead:     %8.2f ns  ★\n", $9
+    printf "\n"
+}
 '
 
 echo "============================================================"
@@ -87,13 +105,15 @@ echo ""
 # Extract and display summary
 TRAD_OVERHEAD=$(echo "$EMPTY_KERNEL" | awk '/^traditional_launch.*\t128\t48\t/ {print $16}')
 COOP_OVERHEAD=$(echo "$EMPTY_KERNEL" | awk '/^cooperative_launch.*\t128\t48\t/ {print $16}')
+GRAPH_OVERHEAD=$(echo "$EMPTY_KERNEL" | awk '/^cuda_graph_launch.*\t128\t48\t/ {print $16}')
 TRAD_SLEEP_OVH=$(echo "$SLEEP_KERNEL" | awk '/^traditional_launch.*1:16/ {print $9}')
 COOP_SLEEP_OVH=$(echo "$SLEEP_KERNEL" | awk '/^cooperative_launch.*1:16/ {print $9}')
+GRAPH_SLEEP_OVH=$(echo "$SLEEP_KERNEL" | awk '/^cuda_graph_launch.*1:16/ {print $9}')
 
-printf "%-25s %12s %12s\n" "" "Traditional" "Cooperative"
-printf "%-25s %12s %12s\n" "" "-----------" "-----------"
-printf "%-25s %10.0f ns %10.0f ns\n" "Empty kernel overhead:" "$TRAD_OVERHEAD" "$COOP_OVERHEAD"
-printf "%-25s %10.0f ns %10.0f ns\n" "With workload overhead:" "$TRAD_SLEEP_OVH" "$COOP_SLEEP_OVH"
+printf "%-25s %12s %12s %12s\n" "" "Traditional" "Cooperative" "CUDA Graph"
+printf "%-25s %12s %12s %12s\n" "" "-----------" "-----------" "----------"
+printf "%-25s %9.0f ns %9.0f ns %9.0f ns\n" "Empty kernel overhead:" "$TRAD_OVERHEAD" "$COOP_OVERHEAD" "$GRAPH_OVERHEAD"
+printf "%-25s %9.0f ns %9.0f ns %9.0f ns\n" "With workload overhead:" "$TRAD_SLEEP_OVH" "$COOP_SLEEP_OVH" "$GRAPH_SLEEP_OVH"
 echo ""
 echo "★ = Key metrics (lower is better)"
 echo ""

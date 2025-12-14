@@ -2,7 +2,7 @@
 ## Abstract
 This work aims at characterizing the synchronization methods in CUDA. It mainly includes two parts:
 1. Non-primitive Synchronization:
-  * Implicit Barrier, i.e. overhead of launching a kernel, including the kernel launch function for Cooperative Groups.
+  * Implicit Barrier, i.e. overhead of launching a kernel, including traditional launch, Cooperative Groups launch, and CUDA Graph launch.
 2. Primitive Synchronization Methods in Nvidia GPUs:
   * Warp level, Thread block level, and grid-level synchronization.
 
@@ -42,30 +42,50 @@ The script displays kernel launch overhead measurements. Here's how each value i
 
 #### 1. Empty Kernel Launch Overhead
 
-Measures the pure overhead of launching an empty kernel (no actual work).
+Measures the pure overhead of launching an empty kernel (no actual work). Compares three launch methods:
+- **Traditional Launch**: `kernel<<<blocks, threads>>>()`
+- **Cooperative Launch**: `cudaLaunchCooperativeKernel()`
+- **CUDA Graph Launch**: Stream capture → `cudaGraphLaunch()`
 
 | Metric | Computation |
 |--------|-------------|
-| **Total Latency** | Wall-clock time from before `cudaLaunchKernel` to after `cudaDeviceSynchronize` |
+| **Total Latency** | Wall-clock time from before launch to after `cudaDeviceSynchronize` |
 | **API Call Overhead** | Wall-clock time of the launch API call only (before synchronization) |
 | **Per-kernel overhead** | `(Total_128_kernels - Total_1_kernel) / 127` — uses difference method to isolate per-kernel cost |
+
+For CUDA Graph, the graph is built once (using stream capture with 1 or 128 kernel nodes) and then launched. The first call builds and caches the graph; subsequent calls reuse the cached graph.
+
+**CUDA Graph Caching Implementation** (see `wrap_launch_functions.cuh`):
+- Graph executables are cached in static variables (`g_graph_exec_1`, `g_graph_exec_128`)
+- Cache tracks which kernel function was used (`g_cached_func_1`, `g_cached_func_128`)
+- When a different kernel is passed, cache is invalidated and rebuilt
+- This allows the same `cuda_graph_launch_N` function to work with different kernels (e.g., `null_kernel` for empty test, `null_kernel_5` for sleep test)
 
 The difference method eliminates fixed costs (driver initialization, synchronization overhead) by comparing 1 vs 128 kernel launches.
 
 #### 2. Sleep Kernel Test
 
-Tests overhead when kernels have actual work (5000 ns sleep).
+Tests overhead when kernels have actual work (5000 ns sleep). Compares all three launch methods.
+
+The test measures three configurations:
+1. **1× fused kernel** (80000 ns total work) - baseline
+2. **16× basic kernel** (5000 ns each = 80000 ns total work)
+3. **1× basic kernel** (5000 ns work) - for calibration
 
 | Metric | Computation |
 |--------|-------------|
-| **Ideal workload** | Expected execution time based on sleep duration |
-| **Measured workload** | `(fused_kernel_time - basic_kernel_time) / (fused_reps - basic_reps)` |
-| **Launch overhead** | `measured_workload - ideal_workload` — the extra time beyond computation |
+| **Ideal workload** | Expected execution time based on sleep duration (5000 ns) |
+| **Measured workload** | `(1×fused_kernel - 1×basic_kernel) / 15` — actual work per kernel |
+| **Launch overhead** | `(16×basic_kernel - 1×fused_kernel) / 15` — extra time from launching 16 kernels vs 1 kernel doing same work |
+
+This measures: **how much extra time does launching 16 separate kernels take vs launching 1 equivalent kernel?**
+
+For CUDA Graph, overhead is near-zero (~12 ns) because all 16 kernels execute from a single graph launch.
 
 ### Raw Output explanation
 
 #### Null Kernel
-* method: the method to do kernel launch \[traditional_launch|cooperative_launch\]
+* method: the method to do kernel launch \[traditional_launch|cooperative_launch|cuda_graph_launch\]
 * GPUCount: how many gpu involved (always 1)
 * rep: repeat calling launch function times
 * blk: griddim
@@ -80,7 +100,7 @@ Tests overhead when kernels have actual work (5000 ns sleep).
 By using "additional latency", it will be possible to eliminate the overhead of synchronization (which is not negligible when considering kernel overhead) and other unrelated parts. Details are explained in the Use_Microbenchmark_To_Better_Understand_The_Overhead_Of_CUDA_Kernels__Poster_.pdf in the same folder.
 
 #### Sleep Kernel (Fused Sleep Kernels to test the kernel overhead when kernel execution latency is long enough)
-* method: the method to do kernel launch \[traditional_launch|cooperative_launch\]
+* method: the method to do kernel launch \[traditional_launch|cooperative_launch|cuda_graph_launch\]
 * GPUCount: how many GPU involved (always 1)
 * rep: repeat calling launch function times for both the basic kernel and the fused kernel.
 * blk: griddim
@@ -209,6 +229,7 @@ make
 ```
 
 ## Version History
+* **v2.1** (2024): Added CUDA Graph launch overhead benchmarks
 * **v2.0** (2024): Updated for CUDA 13.1, removed deprecated multi-grid synchronization APIs
 * **v1.0** (2020): Original release with multi-grid support (CUDA 9.0+)
 

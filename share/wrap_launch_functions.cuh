@@ -55,5 +55,46 @@ void __forceinline__ fname##_##DEP(nKernel func, unsigned int blockPerGPU, unsig
 gencallfun(traditional_launch);
 gencallfun(cooperative_launch);
 
+// CUDA Graph launch - captures N kernel launches into a graph, then launches it
+// Cache: first call builds graph, subsequent calls reuse it
+// Cache is invalidated if kernel function changes
+static cudaGraphExec_t g_graph_exec_1 = nullptr;
+static cudaGraphExec_t g_graph_exec_16 = nullptr;
+static cudaGraphExec_t g_graph_exec_128 = nullptr;
+static cudaStream_t g_graph_stream = nullptr;
+static nKernel g_cached_func_1 = nullptr;
+static nKernel g_cached_func_16 = nullptr;
+static nKernel g_cached_func_128 = nullptr;
+
+#define CUDA_GRAPH_KERNEL_LAUNCH(f, b, t, s) f<<<b, t, 0, s>>>()
+
+#define cuda_graph_launch_func(DEP) \
+void __forceinline__ cuda_graph_launch_##DEP(nKernel func, unsigned int blockPerGPU, unsigned int threadPerBlock)\
+{\
+	if (g_graph_stream == nullptr) {\
+		cudaStreamCreate(&g_graph_stream);\
+	}\
+	if (g_cached_func_##DEP != func) {\
+		if (g_graph_exec_##DEP != nullptr) {\
+			cudaGraphExecDestroy(g_graph_exec_##DEP);\
+			g_graph_exec_##DEP = nullptr;\
+		}\
+		g_cached_func_##DEP = func;\
+	}\
+	if (g_graph_exec_##DEP == nullptr) {\
+		cudaGraph_t graph;\
+		cudaStreamBeginCapture(g_graph_stream, cudaStreamCaptureModeGlobal);\
+		repeat##DEP(CUDA_GRAPH_KERNEL_LAUNCH(func, blockPerGPU, threadPerBlock, g_graph_stream);)\
+		cudaStreamEndCapture(g_graph_stream, &graph);\
+		cudaGraphInstantiate(&g_graph_exec_##DEP, graph, 0);\
+		cudaGraphDestroy(graph);\
+	}\
+	cudaGraphLaunch(g_graph_exec_##DEP, 0);\
+}
+
+cuda_graph_launch_func(1);
+cuda_graph_launch_func(16);
+cuda_graph_launch_func(128);
+
 #define DEF_WRAP_LAUNCH_FUNCTION
 #endif

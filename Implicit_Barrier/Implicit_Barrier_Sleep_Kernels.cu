@@ -45,6 +45,7 @@ void Test_Sleep_Kernel(unsigned int block_perGPU, unsigned int thread_perBlock)
 	printf("Fuse Sleep Kernels to test overhead when kernel execution latency is long enough\n");
 	PACKED_SLEEP_TEST(traditional_launch, null_kernel_5, null_kernel_80, 1, block_perGPU, thread_perBlock,5000);
 	PACKED_SLEEP_TEST(cooperative_launch, null_kernel_5, null_kernel_80, 1, block_perGPU, thread_perBlock,5000);
+	PACKED_SLEEP_TEST(cuda_graph_launch, null_kernel_5, null_kernel_80, 1, block_perGPU, thread_perBlock,5000);
 
 	free(result);
 }

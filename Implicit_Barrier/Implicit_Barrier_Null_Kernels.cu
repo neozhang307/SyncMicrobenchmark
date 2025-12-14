@@ -22,6 +22,7 @@ void Test_Null_Kernel(unsigned int block_perGPU, unsigned int thread_perBlock)
 
 	TEST_ADDITIONAL_LATENCY(traditional_launch, null_kernel,1,128,1, block_perGPU, thread_perBlock);
 	TEST_ADDITIONAL_LATENCY(cooperative_launch, null_kernel,1,128,1, block_perGPU, thread_perBlock);
+	TEST_ADDITIONAL_LATENCY(cuda_graph_launch, null_kernel,1,128,1, block_perGPU, thread_perBlock);
 
 	free(result);
 }
