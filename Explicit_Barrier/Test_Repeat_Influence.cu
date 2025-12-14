@@ -88,8 +88,7 @@ int main(int argc, char **argv)
 
 	thorought(result,k_base_kernel_BCOM_float_DULL,block_count,blockDim,2,2,32);
 
- 	thorought(result,k_base_kernel_GCOM_float_DULL,block_count,blockDim,2,2,32);
- 	thorought(result,k_base_kernel_MGCOM_float_DULL,block_count,blockDim,2,2,32);
+	thorought(result,k_base_kernel_GCOM_float_DULL,block_count,blockDim,2,2,32);
 
 	free(result);
 

@@ -63,24 +63,10 @@ int main(int argc, char **argv)
   	cudaGetDeviceProperties(&deviceProp, 0);
   	unsigned int	smx_count = deviceProp.multiProcessorCount;
 	//test the latency of block through all possible group size
-	benchmarkLatencyInterSM(cooperative_launch, 
-							k_base_kernel_GCOM_float_DULL_DEP256, k_base_kernel_GCOM_float_DULL_DEP2816, 
+	benchmarkLatencyInterSM(cooperative_launch,
+							k_base_kernel_GCOM_float_DULL_DEP256, k_base_kernel_GCOM_float_DULL_DEP2816,
 							"grid_sync",
 							256, 2816,
 							smx_count, 32,
 							1);
-	int gpu_count=1;
-	if(argc>=2)
-	{
-		gpu_count=(int)ToUInt(argv[1]);
-	}
-	for(int i=1; i<=gpu_count; i++)
-	{
-		benchmarkLatencyInterSM(multi_cooperative_launch, 
-							k_base_kernel_MGCOM_float_DULL_DEP256, k_base_kernel_GCOM_float_DULL_DEP2816, 
-							"multi_grid_sync",
-							256, 2816,
-							smx_count, 32,
-							1);
-	}
 }

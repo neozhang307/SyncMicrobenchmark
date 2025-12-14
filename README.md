@@ -1,37 +1,51 @@
 # Sync_Microbenchmark
 ## Abstract
-This work aims at characterizing the synchronization methods in CUDA. It mainly includes two-part:
+This work aims at characterizing the synchronization methods in CUDA. It mainly includes two parts:
 1. Non-primitive Synchronization:
-  * Implicit Barrier, i.e. overhead of launching a kernel, including the new kernel launch function introduced for Cooperative Groups.
-  * Multi-GPU synchronization with OpenMP in a single node.
-2. Primitive Synchronization Methods in Nvidia GPUs introduced in CUDA 9.0:
+  * Implicit Barrier, i.e. overhead of launching a kernel, including the kernel launch function for Cooperative Groups.
+2. Primitive Synchronization Methods in Nvidia GPUs:
   * Warp level, Thread block level, and grid-level synchronization.
-  * Multi-grid synchronization for Multi-GPU synchronization.
 
-PLUS, for stable result, please avoid using dynamic frequency. 
+Note: Multi-grid synchronization (cudaLaunchCooperativeKernelMultiDevice) was removed in CUDA 13.0. This codebase has been updated to remove all multi-grid related code.
+
+For stable results, please avoid using dynamic frequency.
+
 ## Requirements
- CUDA 9.0
- sm_60 for most of the measurements
- sm_70 for sleep instruction involved measurements.
- 
+* CUDA 13.1+
+* Supported architectures: sm_80, sm_90, sm_100, sm_120
+
+## Quick Start
+
+### Implicit Barrier
+```bash
+cd Implicit_Barrier
+make
+./run_benchmark.sh
+```
+
+### Explicit Barrier
+```bash
+cd Explicit_Barrier
+make
+./run_benchmark.sh
+```
+
 ## Implicit Barrier
 ### Compile
-Directly compile with the Makefile in Implicit_Barrier folder
+Directly compile with the Makefile in Implicit_Barrier folder.
 
-The sleep function is only available after sm_70. We tried to use other instructions to control the kernel execute latency, but the result is not so stable as sleep instruction, and larger than sleep instruction.
-### Input explanation
- * ImplicitBarrier \[gpu_count\]
- * gpu_count is 2 by default. When testing multi-GPU related latencies, the experiments would iterate from 1 to gpu_count.
+The sleep function is only available after sm_70.
+
 ### Output explanation
 
-#### Null Kernel 
-* method: the method to do kernel launch \[traditional_launch|cooperative_launch|multi_cooperative_launch|single_omp_traditional_launch\]
-* GPUCount: how many gpu involved
+#### Null Kernel
+* method: the method to do kernel launch \[traditional_launch|cooperative_launch\]
+* GPUCount: how many gpu involved (always 1)
 * rep: repeat calling launch function times
 * blk: griddim
 * thrd: blockdim
 * m(clk) s(clk): mean and standard variation of CPU clock() function
-* m(sync) s(sync): mean and standard variation of DeviceSynchronization(); 
+* m(sync) s(sync): mean and standard variation of DeviceSynchronization();
 * m(laun) s(laun): latency of launch functions (test before DeviceSynchronization());
 * m(ttl) s(ttl): latency of kernels total execution (test after Device Synchronization());
 * m(avelaun) s(avelaun): mean and standard variation of average latency of each launch function, compute with m(laun)/rep
@@ -40,18 +54,18 @@ The sleep function is only available after sm_70. We tried to use other instruct
 By using "additional latency", it will be possible to eliminate the overhead of synchronization (which is not negligible when considering kernel overhead) and other unrelated parts. Details are explained in the Use_Microbenchmark_To_Better_Understand_The_Overhead_Of_CUDA_Kernels__Poster_.pdf in the same folder.
 
 #### Sleep Kernel (Fused Sleep Kernels to test the kernel overhead when kernel execution latency is long enough)
-* method: the method to do kernel launch \[traditional_launch|cooperative_launch|multi_cooperative_launch|single_omp_traditional_launch\]
-* GPUCount: how many GPU involved
+* method: the method to do kernel launch \[traditional_launch|cooperative_launch\]
+* GPUCount: how many GPU involved (always 1)
 * rep: repeat calling launch function times for both the basic kernel and the fused kernel.
 * blk: griddim
 * thrd: blockdim
 * idea(wkld): the work unit. When fuse two kernel means the kernel execution latency of fused kernel should be twice the idea(wkld)
-* m(wkld) s(wkld): the basic workload deduce from the measurements. 
+* m(wkld) s(wkld): the basic workload deduce from the measurements.
 
 #### Workload Test
 The same as NULL KERNEL. Using "Sleep" to act as "workload"
 
-Just to show how additioanl latency tested is related to the real kernel execution latency. Default sequencing is "(0 1 2 4 8 16 32 64 128)X2000ns". Before a certain point, increasing kernel execution latency would not affect the additional latency caused by the additional kernel (imagine a pipeline when pipeline is full, the most timeconsuming step mainly influence the performance of the whole system. Just to help understanding, we do not know whether a "pipeline" exist, especially in the situation of multi-grid launch). 
+Just to show how additional latency tested is related to the real kernel execution latency. Default sequencing is "(0 1 2 4 8 16 32 64 128)X2000ns". Before a certain point, increasing kernel execution latency would not affect the additional latency caused by the additional kernel (imagine a pipeline when pipeline is full, the most timeconsuming step mainly influence the performance of the whole system).
 
 Details are explained in the Use_Microbenchmark_To_Better_Understand_The_Overhead_Of_CUDA_Kernels__Poster_.pdf in the same folder.
 
@@ -65,7 +79,7 @@ Directly compile with the Makefile in Explicit_Barrier folder. Three executable 
 #### TestRepeat
 To show if repeating a synchronization instruction will influence the performance itself
 
-The result shows that the result of shufl, block sync and grid-level syncs become more accurate as the repeat times increase. But for warp level syncs, this would happen, probably because the current implementation is based on software codes, repeat too many times will cause instruction overflow, harming the performance.
+The result shows that the result of shuffle, block sync and grid-level syncs become more accurate as the repeat times increase. But for warp level syncs, this would happen, probably because the current implementation is based on software codes, repeat too many times will cause instruction overflow, harming the performance.
 
 ##### Execution
 ./TestRepeat
@@ -92,45 +106,56 @@ Latency of block sync for each possible group
 ##### Output
 ###### Latency
 * method: kernel function name
-* GPUcount: 1 
+* GPUcount: 1
 * rep: repeat instruction times
 * blk: griddim
 * thrd: blockdim
 * m(ave_cycle) s(ave_cycle): mean and standard variation of average instruction(cycle)
 ###### Throughput
 * method: kernel function name
-* GPUcount: 1 
+* GPUcount: 1
 * rep: repeat instruction times
 * blk: griddim
 * thrd: blockdim
 * tile: used to control tile group size
 * m(ttl_latency): total latency for synchronization
-* m(thrput): throuput (warp/cycle) computed base on m(ttl_latency)
+* m(thrput): throughput (warp/cycle) computed base on m(ttl_latency)
 
 #### BenchmarkInterSM
 Benchmark measurements involve several SMs
 
-Latency of grid-level syncs
+Latency of grid-level syncs (using cooperative launch with grid_group.sync())
 
 ##### Execution
-./BenchmarkInterSM \[gpu_count\]
+./BenchmarkInterSM
 
 ##### Output
 * method: kernel function name
-* GPUcount: GPU involved
+* GPUcount: GPU involved (always 1)
 * basicrep: repeat instruction times in basic kernel
-* moredrep: repeat instruction times in more kernel
+* morerep: repeat instruction times in more kernel
 * blk: griddim
 * thrd: blockdim
 * m(basic_ttl) s(basic_ttl): mean and standard variation of total kernel latency (ns) for executing basic kernel
 * m(more_ttl) s(more_ttl): mean and standard variation of total kernel latency (ns) for executing more kernel
-* m(avginstru) s(avginstr): mean and standard variation of average instruction (ns) deduced
+* m(avginstr) s(avginstr): mean and standard variation of average instruction (ns) deduced
 
-## Side note: 
-CUDA 11.5 marked multi-grid synchronization API as deprecated. But it seems that there is no new implementation yet.
+## Reduction
+A simple grid-level reduction benchmark using cooperative groups.
+
+### Compile
+```bash
+cd Reduction
+make
+./greduce
+```
+
+## Version History
+* **v2.0** (2024): Updated for CUDA 13.1, removed deprecated multi-grid synchronization APIs
+* **v1.0** (2020): Original release with multi-grid support (CUDA 9.0+)
 
 ## Citation
 
-  This research will be published in IPDPS20. Please cite:
-  
-  Lingqi Zhang, Mohamed Wahib, Haoyu Zhang, Satoshi Matsuoka. A Study of Single and Multi-device Synchronization Methods in Nvidia GPUs. InProceedings of the IPDPS 2020.
+This research was published in IPDPS 2020. Please cite:
+
+Lingqi Zhang, Mohamed Wahib, Haoyu Zhang, Satoshi Matsuoka. A Study of Single and Multi-device Synchronization Methods in Nvidia GPUs. In Proceedings of the IPDPS 2020.

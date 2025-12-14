@@ -39,14 +39,7 @@ int main(int argc, char **argv)
 	//merge this two situation together
 	//launch single null kernel and different features
 	//launch additional null kernel and compute the kernel overhead here
-	int gpu_count=2;
-	if(argc>=2)
-	{
-		gpu_count=(int)ToUInt(argv[1]);
-	}
-
 	Test_Null_Kernel(smx_count,1024);
-	Test_Null_Kernel_MGPU(1,32,gpu_count);
 
 	//launch big kernel and additional big kernel to compute the kernel overhead
    	if(sm_ver<7)
@@ -55,7 +48,6 @@ int main(int argc, char **argv)
    		exit(0);
  	}
 	Test_Sleep_Kernel(smx_count,1024);
-	Test_Sleep_Kernel_MGPU(smx_count,1024,gpu_count);
 
 	//to see how workload influence the "additional latency"
 	Test_Workload_Influence(smx_count,1024);

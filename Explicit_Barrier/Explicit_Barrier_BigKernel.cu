@@ -19,5 +19,4 @@ In this situation, even 8 GPUs can use the same code to test.
 //block level
 MIDDLEKERNEL_DDEP(BASE,BCOM,float,DULL)
 //grid level
-BIGKERNEL_DDEP(BASE,MGCOM,float,DULL)
 BIGKERNEL_DDEP(BASE,GCOM,float,DULL) 

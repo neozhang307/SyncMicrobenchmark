@@ -1,5 +1,6 @@
 
 #include<set>
+#include<cuda_runtime.h>
 
 #define cudaCheckError() {                                          \
  cudaError_t e=cudaGetLastError();                                 \

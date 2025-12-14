@@ -40,7 +40,6 @@ using namespace cooperative_groups;
 
 //grid level
 #define GCOM(OP,a,b) OP(b,a); sync(gg); OP(a,b); sync(gg);
-#define MGCOM(OP,a,b) OP(b,a); sync(mgg); OP(a,b); sync(mgg);
 #define COM(OP,a,b) OP(b,a); OP(a,b);
 
 
@@ -58,7 +57,6 @@ __global__ void k_base_kernel_##COM##_##TYPE##_##OP##_DEP##DEP (TYPE a, TYPE b, 
 \
 	thread_group bg = this_thread_block();\
 	grid_group gg = this_grid();\
-	multi_grid_group mgg = this_multi_grid();\
 	unsigned int  start,end;\
 	asm volatile ("mov.u32 %0, %%clock;" : "=r"(start) :: "memory");\
 	repeat##DEP(COM(OP,a,b));\
@@ -148,7 +146,6 @@ FUNC_DDEP(k_base_kernel_BCOM_float_DULL_DEP,float);
 
 //grid level
 FUNC_DDEP(k_base_kernel_GCOM_float_DULL_DEP,float);
-FUNC_DDEP(k_base_kernel_MGCOM_float_DULL_DEP,float);//multi grid sync
 
 //null used for test gpu cycle latency
 __global__ void k_base_kernel_COM_float_DULL_DEP1(float,float,double*,unsigned int*,unsigned int*, unsigned int);

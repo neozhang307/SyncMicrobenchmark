@@ -110,7 +110,7 @@ void getIdenticalGPUs(int num_of_gpus, std::set<int> &identicalGPUs, bool coalau
             deviceProp.minor != maxMajorMinor[1]) {
           identicalGPUs.erase(it);
         }
-        if (!deviceProp.cooperativeMultiDeviceLaunch ||
+        if (!deviceProp.cooperativeLaunch ||
             !deviceProp.concurrentManagedAccess) {
           identicalGPUs.erase(it);
         }
