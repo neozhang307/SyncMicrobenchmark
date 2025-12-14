@@ -61,6 +61,17 @@ echo "$EMPTY_KERNEL" | awk '
     printf "  Per-kernel overhead: %7.2f ns  ★\n", $16
     printf "\n"
 }
+/^graph_replay.*\t1\t48\t/ {
+    printf "Graph Replay (1 launch):\n"
+    printf "  Total Latency:      %8.2f ns\n", $12
+    printf "  API Call Overhead:  %8.2f ns\n", $10
+}
+/^graph_replay.*\t128\t48\t/ {
+    printf "Graph Replay (128 launches):\n"
+    printf "  Total Latency:      %8.2f ns\n", $12
+    printf "  Per-launch overhead: %7.2f ns  ★\n", $16
+    printf "\n"
+}
 '
 
 echo "============================================================"
@@ -95,6 +106,13 @@ echo "$SLEEP_KERNEL" | awk '
     printf "  Launch overhead:     %8.2f ns  ★\n", $9
     printf "\n"
 }
+/^graph_replay.*1:16/ {
+    printf "Graph Replay:\n"
+    printf "  Ideal workload:      %8.2f ns\n", $6
+    printf "  Measured workload:   %8.2f ns\n", $7
+    printf "  Launch overhead:     %8.2f ns  ★\n", $9
+    printf "\n"
+}
 '
 
 echo "============================================================"
@@ -106,14 +124,20 @@ echo ""
 TRAD_OVERHEAD=$(echo "$EMPTY_KERNEL" | awk '/^traditional_launch.*\t128\t48\t/ {print $16}')
 COOP_OVERHEAD=$(echo "$EMPTY_KERNEL" | awk '/^cooperative_launch.*\t128\t48\t/ {print $16}')
 GRAPH_OVERHEAD=$(echo "$EMPTY_KERNEL" | awk '/^cuda_graph_launch.*\t128\t48\t/ {print $16}')
+REPLAY_OVERHEAD=$(echo "$EMPTY_KERNEL" | awk '/^graph_replay.*\t128\t48\t/ {print $16}')
 TRAD_SLEEP_OVH=$(echo "$SLEEP_KERNEL" | awk '/^traditional_launch.*1:16/ {print $9}')
 COOP_SLEEP_OVH=$(echo "$SLEEP_KERNEL" | awk '/^cooperative_launch.*1:16/ {print $9}')
 GRAPH_SLEEP_OVH=$(echo "$SLEEP_KERNEL" | awk '/^cuda_graph_launch.*1:16/ {print $9}')
+REPLAY_SLEEP_OVH=$(echo "$SLEEP_KERNEL" | awk '/^graph_replay.*1:16/ {print $9}')
 
-printf "%-25s %12s %12s %12s\n" "" "Traditional" "Cooperative" "CUDA Graph"
-printf "%-25s %12s %12s %12s\n" "" "-----------" "-----------" "----------"
-printf "%-25s %9.0f ns %9.0f ns %9.0f ns\n" "Empty kernel overhead:" "$TRAD_OVERHEAD" "$COOP_OVERHEAD" "$GRAPH_OVERHEAD"
-printf "%-25s %9.0f ns %9.0f ns %9.0f ns\n" "With workload overhead:" "$TRAD_SLEEP_OVH" "$COOP_SLEEP_OVH" "$GRAPH_SLEEP_OVH"
+printf "%-25s %12s %12s %12s %12s\n" "" "Traditional" "Cooperative" "CUDA Graph" "Graph Replay"
+printf "%-25s %12s %12s %12s %12s\n" "" "-----------" "-----------" "----------" "------------"
+printf "%-25s %9.0f ns %9.0f ns %9.0f ns %9.0f ns\n" "Empty kernel overhead:" "$TRAD_OVERHEAD" "$COOP_OVERHEAD" "$GRAPH_OVERHEAD" "$REPLAY_OVERHEAD"
+printf "%-25s %9.0f ns %9.0f ns %9.0f ns %9.0f ns\n" "With workload overhead:" "$TRAD_SLEEP_OVH" "$COOP_SLEEP_OVH" "$GRAPH_SLEEP_OVH" "$REPLAY_SLEEP_OVH"
 echo ""
 echo "★ = Key metrics (lower is better)"
+echo ""
+echo "Notes:"
+echo "  - CUDA Graph: measures per-kernel overhead within a graph (1 vs 128 kernels)"
+echo "  - Graph Replay: measures cudaGraphLaunch overhead (1 vs 128 launches of same graph)"
 echo ""

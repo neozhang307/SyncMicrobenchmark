@@ -96,5 +96,39 @@ cuda_graph_launch_func(1);
 cuda_graph_launch_func(16);
 cuda_graph_launch_func(128);
 
+// Graph replay - builds graph once with 1 kernel, then launches it N times
+// Measures cudaGraphLaunch API overhead (not per-kernel overhead)
+// Cache is shared across all DEP variants since they all use 1-kernel graph
+static cudaGraphExec_t g_graph_replay_exec = nullptr;
+static nKernel g_graph_replay_cached_func = nullptr;
+
+#define graph_replay_func(DEP) \
+void __forceinline__ graph_replay_##DEP(nKernel func, unsigned int blockPerGPU, unsigned int threadPerBlock)\
+{\
+	if (g_graph_stream == nullptr) {\
+		cudaStreamCreate(&g_graph_stream);\
+	}\
+	if (g_graph_replay_cached_func != func) {\
+		if (g_graph_replay_exec != nullptr) {\
+			cudaGraphExecDestroy(g_graph_replay_exec);\
+			g_graph_replay_exec = nullptr;\
+		}\
+		g_graph_replay_cached_func = func;\
+	}\
+	if (g_graph_replay_exec == nullptr) {\
+		cudaGraph_t graph;\
+		cudaStreamBeginCapture(g_graph_stream, cudaStreamCaptureModeGlobal);\
+		CUDA_GRAPH_KERNEL_LAUNCH(func, blockPerGPU, threadPerBlock, g_graph_stream);\
+		cudaStreamEndCapture(g_graph_stream, &graph);\
+		cudaGraphInstantiate(&g_graph_replay_exec, graph, 0);\
+		cudaGraphDestroy(graph);\
+	}\
+	repeat##DEP(cudaGraphLaunch(g_graph_replay_exec, 0);)\
+}
+
+graph_replay_func(1);
+graph_replay_func(16);
+graph_replay_func(128);
+
 #define DEF_WRAP_LAUNCH_FUNCTION
 #endif
