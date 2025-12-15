@@ -1,0 +1,22 @@
+
+CODEFLAG=-gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_90,code=sm_90 -gencode=arch=compute_100,code=sm_100 -gencode=arch=compute_120,code=sm_120
+GCCFLAG=-lcudart -L/usr/local/cuda/lib64 -I/usr/local/cuda/include
+OMPFLAG=-Xcompiler -fopenmp
+EXECUTABLE=CudaGraphBench
+
+all: $(EXECUTABLE)
+
+../../share/util.o: ../../share/util.cpp
+	g++ $(GCCFLAG) -c -o $@ $<
+
+CudaGraph_StreamCapture.o: CudaGraph_StreamCapture.cu CudaGraph_Kernel.cuh
+	nvcc -x cu $(CODEFLAG) -rdc=true -dc -o $@ $<
+
+CudaGraph.o: CudaGraph.cu CudaGraph_Kernel.cuh
+	nvcc -x cu $(CODEFLAG) -rdc=true -dc -o $@ $<
+
+$(EXECUTABLE): CudaGraph.o CudaGraph_StreamCapture.o ../../share/util.o
+	nvcc $(CODEFLAG) -rdc=true $(OMPFLAG) -o $@ $^
+
+clean:
+	rm -f *.o $(EXECUTABLE)
