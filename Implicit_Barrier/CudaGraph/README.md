@@ -71,7 +71,7 @@ From `../run_benchmark.sh`:
 | Memset Node | Basic | `cudaGraphAddMemsetNode` | 10.0 | | Memory set operations |
 | Host Node | Basic | `cudaGraphAddHostNode` | 10.0 | | Host callback function |
 | **Child Graph** | Basic | `cudaGraphAddChildGraphNode` | 10.0 | ✓ | Embed subgraph as node |
-| Empty Node | Basic | `cudaGraphAddEmptyNode` | 10.0 | | Synchronization/dependency point |
+| **Empty Node** | Basic | `cudaGraphAddEmptyNode` | 10.0 | ✓ | Synchronization/dependency point |
 | Event Wait | Event | `cudaGraphAddEventWaitNode` | 11.1 | | Wait for CUDA event |
 | Event Record | Event | `cudaGraphAddEventRecordNode` | 11.1 | | Record CUDA event |
 | External Semaphore Wait | Sync | `cudaGraphAddExternalSemaphoresWaitNode` | 11.2 | | Wait external semaphore |
@@ -109,6 +109,20 @@ Compare iterative execution using child graph composition vs flat graph.
 - **Merged flat overhead**: Merging two flat_64 adds ~18% overhead vs flat_128 directly
 - **Runtime**: All methods have identical per-iteration runtime once instantiated (~39 ns real overhead at 128 iter)
 - CUDA optimizes/flattens the graph structure during instantiation
+
+### Empty Node Overhead Test
+
+Compare flat graphs with and without empty nodes to measure empty node overhead.
+
+| Method | Description |
+|--------|-------------|
+| `flat_kernel_only` | N kernels in sequence |
+| `flat_kernel+empty` | N kernels with empty node after each (2N nodes total) |
+
+**Key findings:**
+- **Construction overhead**: Empty nodes add ~60% construction overhead (87 us → 138 us for 128 iter)
+- **Runtime overhead**: Empty nodes add **zero runtime overhead** (~0 ns difference)
+- CUDA optimizes away empty nodes at runtime - they are purely dependency markers
 
 ## Planned Implementation
 

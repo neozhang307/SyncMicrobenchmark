@@ -9,6 +9,7 @@ Implicit_Barrier/ImplicitBarrier
 Implicit_Barrier/CudaGraph/bench_stream_capture
 Implicit_Barrier/CudaGraph/bench_while_conditional
 Implicit_Barrier/CudaGraph/bench_child_graph
+Implicit_Barrier/CudaGraph/bench_empty_node
 Reduction/greduce
 
 # Editor and IDE files
