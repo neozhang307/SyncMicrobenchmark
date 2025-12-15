@@ -138,12 +138,14 @@ Graph B (stream2): wait[A0] -> sleep[0] -> record[B0] -> wait[A1] -> ...
 | Method | Description |
 |--------|-------------|
 | `pingpong_2graph` | Two graphs with N kernels each, alternating via 2N-1 events |
-| `single_graph` | One graph with 2N kernels using dependency edges |
+| `single_graph_linear` | One graph with 2N kernels in linear sequence (each depends on previous one) |
+| `single_graph_ppdeps` | One graph with 2N kernels, each depends on previous TWO (mimics ping-pong deps) |
 
 **Key findings:**
-- **Construction overhead**: Ping-pong is ~2.7x more expensive (208 us vs 76 us for 128 kernels)
-- **Per-sync overhead**: ~**1500 ns per event record/wait** pair at scale (64 iterations, 127 syncs)
-- **Comparison**: In-graph dependency edges have ~40 ns per-kernel overhead
+- **Construction overhead**: Ping-pong is ~2.4x more expensive (187 us vs 79 us linear, 103 us ppdeps for 128 kernels)
+- **Runtime overhead**: Both single graph variants have identical runtime (~5158 ns/kernel vs 6141 ns/kernel for ping-pong)
+- **Per-sync overhead**: ~**1500-1570 ns per event record/wait** pair at scale (64 iterations, 127 syncs)
+- **Dependency edge overhead**: Adding extra dependencies (ppdeps) has no runtime cost - CUDA optimizes them away
 - Use single graph with dependency edges when possible; event nodes only for true multi-graph scenarios
 
 ## Planned Implementation

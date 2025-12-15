@@ -198,6 +198,96 @@ double measure_pingpong(int iterations, int sleep_count,
 }
 
 //=============================================================================
+// Single graph with ping-pong deps: each node depends on previous TWO nodes
+// Mimics the cross-graph dependency pattern within one graph
+// k0 -> k1 -> k2 (deps: k0,k1) -> k3 (deps: k1,k2) -> ...
+//=============================================================================
+double build_single_graph_pingpong_deps(cudaGraph_t* graph, cudaGraphExec_t* graphExec,
+                                         int total_kernels, int sleep_count,
+                                         unsigned int blocks, unsigned int threads)
+{
+    KernelFunc sleep_kernel = (sleep_count == 5) ? sleep_kernel_5 : sleep_kernel_10;
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    cudaGraphCreate(graph, 0);
+
+    cudaKernelNodeParams kernelParams = {};
+    kernelParams.func = (void*)sleep_kernel;
+    kernelParams.gridDim = dim3(blocks);
+    kernelParams.blockDim = dim3(threads);
+    kernelParams.sharedMemBytes = 0;
+    kernelParams.kernelParams = NULL;
+    kernelParams.extra = NULL;
+
+    // Store all nodes for dependency tracking
+    cudaGraphNode_t* nodes = new cudaGraphNode_t[total_kernels];
+
+    for (int i = 0; i < total_kernels; i++) {
+        if (i == 0) {
+            // First node: no dependencies
+            cudaGraphAddKernelNode(&nodes[i], *graph, NULL, 0, &kernelParams);
+        } else if (i == 1) {
+            // Second node: depends on first
+            cudaGraphAddKernelNode(&nodes[i], *graph, &nodes[0], 1, &kernelParams);
+        } else {
+            // All other nodes: depend on previous TWO nodes
+            cudaGraphNode_t deps[2] = {nodes[i-2], nodes[i-1]};
+            cudaGraphAddKernelNode(&nodes[i], *graph, deps, 2, &kernelParams);
+        }
+    }
+
+    cudaGraphInstantiate(graphExec, *graph, 0);
+
+    delete[] nodes;
+
+    auto end = std::chrono::high_resolution_clock::now();
+    return std::chrono::duration<double, std::nano>(end - start).count();
+}
+
+double measure_single_graph_pingpong_deps(int total_kernels, int sleep_count,
+                                           unsigned int blocks, unsigned int threads,
+                                           double* out_construct_time)
+{
+    // Measure construction
+    double total_construct = 0;
+    for (int c = 0; c < 10; c++) {
+        cudaGraph_t g;
+        cudaGraphExec_t ge;
+        total_construct += build_single_graph_pingpong_deps(&g, &ge, total_kernels, sleep_count, blocks, threads);
+        cudaGraphExecDestroy(ge);
+        cudaGraphDestroy(g);
+    }
+    *out_construct_time = total_construct / 10.0;
+
+    // Build for measurement
+    cudaGraph_t graph;
+    cudaGraphExec_t graphExec;
+    build_single_graph_pingpong_deps(&graph, &graphExec, total_kernels, sleep_count, blocks, threads);
+
+    // Warmup
+    for (int w = 0; w < WARMUP_RUNS; w++) {
+        cudaGraphLaunch(graphExec, 0);
+        cudaDeviceSynchronize();
+    }
+
+    // Measure
+    double total_time = 0;
+    for (int r = 0; r < MEASURE_RUNS; r++) {
+        auto start = std::chrono::high_resolution_clock::now();
+        cudaGraphLaunch(graphExec, 0);
+        cudaDeviceSynchronize();
+        auto end = std::chrono::high_resolution_clock::now();
+        total_time += std::chrono::duration<double, std::nano>(end - start).count();
+    }
+
+    cudaGraphExecDestroy(graphExec);
+    cudaGraphDestroy(graph);
+
+    return total_time / MEASURE_RUNS;
+}
+
+//=============================================================================
 // Single graph baseline: 2N kernels in sequence (no event sync)
 //=============================================================================
 double build_single_graph(cudaGraph_t* graph, cudaGraphExec_t* graphExec,
@@ -291,20 +381,23 @@ void Test_EventNode(unsigned int blocks, unsigned int threads)
     int num_tests = sizeof(iteration_counts) / sizeof(iteration_counts[0]);
 
     printf("=== Graph Construction Overhead ===\n");
-    printf("method\t\t\titers\ttotal_kernels\tevents\t\tconstruct(ns)\n");
+    printf("method\t\t\t\titers\tkernels\tevents\tconstruct(ns)\n");
 
     for (int t = 0; t < num_tests; t++) {
         int iters = iteration_counts[t];
         int total_events = (iters > 1) ? (2 * iters - 1) : 1;
-        double construct_pingpong, construct_single;
+        double construct_pingpong, construct_single, construct_ppdeps;
 
         measure_pingpong(iters, 5, blocks, threads, &construct_pingpong);
         measure_single_graph(2 * iters, 5, blocks, threads, &construct_single);
+        measure_single_graph_pingpong_deps(2 * iters, 5, blocks, threads, &construct_ppdeps);
 
-        printf("pingpong_2graph\t\t%d\t%d\t\t%d\t\t%.2f\n",
+        printf("pingpong_2graph\t\t\t%d\t%d\t%d\t%.2f\n",
                iters, 2 * iters, total_events, construct_pingpong);
-        printf("single_graph\t\t%d\t%d\t\t0\t\t%.2f\n",
+        printf("single_graph_linear\t\t%d\t%d\t0\t%.2f\n",
                iters, 2 * iters, construct_single);
+        printf("single_graph_ppdeps\t\t%d\t%d\t0\t%.2f\n",
+               iters, 2 * iters, construct_ppdeps);
         printf("\n");
     }
 
@@ -321,11 +414,14 @@ void Test_EventNode(unsigned int blocks, unsigned int threads)
 
             double time_pingpong = measure_pingpong(iters, sleep_count, blocks, threads, &construct_tmp);
             double time_single = measure_single_graph(2 * iters, sleep_count, blocks, threads, &construct_tmp);
+            double time_ppdeps = measure_single_graph_pingpong_deps(2 * iters, sleep_count, blocks, threads, &construct_tmp);
 
             printf("pingpong_2graph\t\t%d\t%u\t%u\t%d\t\t%.2f\t\t%.2f\n",
                    iters, blocks, threads, workload_ns, time_pingpong, time_pingpong / (2 * iters));
-            printf("single_graph\t\t%d\t%u\t%u\t%d\t\t%.2f\t\t%.2f\n",
+            printf("single_graph_linear\t%d\t%u\t%u\t%d\t\t%.2f\t\t%.2f\n",
                    iters, blocks, threads, workload_ns, time_single, time_single / (2 * iters));
+            printf("single_graph_ppdeps\t%d\t%u\t%u\t%d\t\t%.2f\t\t%.2f\n",
+                   iters, blocks, threads, workload_ns, time_ppdeps, time_ppdeps / (2 * iters));
             printf("\n");
         }
     }
@@ -333,8 +429,8 @@ void Test_EventNode(unsigned int blocks, unsigned int threads)
     // Per-sync overhead using dual-workload method
     printf("=== Per-Sync Event Overhead (workload error eliminated) ===\n");
     printf("Formula: total_overhead = 2 * time_5us - time_10us\n");
-    printf("         per_sync_overhead = (pp_overhead - sg_overhead) / num_sync_events\n\n");
-    printf("iters\tnum_syncs\tpp_overhead(ns)\tsg_overhead(ns)\tper_sync(ns)\n");
+    printf("         per_sync_overhead = (pp_overhead - baseline_overhead) / num_sync_events\n\n");
+    printf("iters\tnum_syncs\tpp_overhead\tlinear_overhead\tppdeps_overhead\tper_sync_vs_linear\tper_sync_vs_ppdeps\n");
 
     for (int t = 0; t < num_tests; t++) {
         int iters = iteration_counts[t];
@@ -348,15 +444,21 @@ void Test_EventNode(unsigned int blocks, unsigned int threads)
         double time_sg_5 = measure_single_graph(2 * iters, 5, blocks, threads, &construct_tmp);
         double time_sg_10 = measure_single_graph(2 * iters, 10, blocks, threads, &construct_tmp);
 
+        double time_ppdeps_5 = measure_single_graph_pingpong_deps(2 * iters, 5, blocks, threads, &construct_tmp);
+        double time_ppdeps_10 = measure_single_graph_pingpong_deps(2 * iters, 10, blocks, threads, &construct_tmp);
+
         // Real total overhead (workload eliminated)
         double real_pp_total = 2 * time_pp_5 - time_pp_10;
         double real_sg_total = 2 * time_sg_5 - time_sg_10;
+        double real_ppdeps_total = 2 * time_ppdeps_5 - time_ppdeps_10;
 
-        // Per-sync overhead
-        double per_sync_overhead = (real_pp_total - real_sg_total) / num_syncs;
+        // Per-sync overhead vs each baseline
+        double per_sync_vs_linear = (real_pp_total - real_sg_total) / num_syncs;
+        double per_sync_vs_ppdeps = (real_pp_total - real_ppdeps_total) / num_syncs;
 
-        printf("%d\t%d\t\t%.2f\t\t%.2f\t\t%.2f\n",
-               iters, num_syncs, real_pp_total, real_sg_total, per_sync_overhead);
+        printf("%d\t%d\t\t%.0f\t\t%.0f\t\t%.0f\t\t%.0f\t\t\t%.0f\n",
+               iters, num_syncs, real_pp_total, real_sg_total, real_ppdeps_total,
+               per_sync_vs_linear, per_sync_vs_ppdeps);
     }
 }
 
