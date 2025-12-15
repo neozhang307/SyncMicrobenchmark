@@ -7,11 +7,7 @@
 #include <stdio.h>
 #include <chrono>
 
-// Define sleep kernels
-SLEEP_KERNEL(5);
-SLEEP_KERNEL(10);
-SLEEP_KERNEL(80);   // 16 × 5 = fused kernel for 5us test
-SLEEP_KERNEL(160);  // 16 × 10 = fused kernel for 10us test
+// Sleep kernels defined in CudaGraph_Kernels.cu
 
 #define WARMUP_RUNS 5
 #define MEASURE_RUNS 100

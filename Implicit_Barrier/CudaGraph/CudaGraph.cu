@@ -8,6 +8,7 @@
 
 // External test functions
 void Test_StreamCapture_All(unsigned int blocks, unsigned int threads);
+void Test_WhileConditional(unsigned int blocks, unsigned int threads);
 
 int main(int argc, char **argv)
 {
@@ -22,6 +23,10 @@ int main(int argc, char **argv)
     printf("=======================================================================\n\n");
 
     Test_StreamCapture_All(smx_count, 1024);
+
+    printf("\n\n");
+
+    Test_WhileConditional(smx_count, 1024);
 
     return 0;
 }
