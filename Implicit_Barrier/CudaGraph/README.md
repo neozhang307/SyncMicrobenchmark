@@ -72,8 +72,8 @@ From `../run_benchmark.sh`:
 | Host Node | Basic | `cudaGraphAddHostNode` | 10.0 | | Host callback function |
 | **Child Graph** | Basic | `cudaGraphAddChildGraphNode` | 10.0 | ✓ | Embed subgraph as node |
 | **Empty Node** | Basic | `cudaGraphAddEmptyNode` | 10.0 | ✓ | Synchronization/dependency point |
-| Event Wait | Event | `cudaGraphAddEventWaitNode` | 11.1 | | Wait for CUDA event |
-| Event Record | Event | `cudaGraphAddEventRecordNode` | 11.1 | | Record CUDA event |
+| **Event Wait** | Event | `cudaGraphAddEventWaitNode` | 11.1 | ✓ | Wait for CUDA event |
+| **Event Record** | Event | `cudaGraphAddEventRecordNode` | 11.1 | ✓ | Record CUDA event |
 | External Semaphore Wait | Sync | `cudaGraphAddExternalSemaphoresWaitNode` | 11.2 | | Wait external semaphore |
 | External Semaphore Signal | Sync | `cudaGraphAddExternalSemaphoresSignalNode` | 11.2 | | Signal external semaphore |
 | Memory Alloc | Memory | `cudaGraphAddMemAllocNode` | 11.4 | | Allocate memory in graph |
@@ -123,6 +123,28 @@ Compare flat graphs with and without empty nodes to measure empty node overhead.
 - **Construction overhead**: Empty nodes add ~60% construction overhead (87 us → 138 us for 128 iter)
 - **Runtime overhead**: Empty nodes add **zero runtime overhead** (~0 ns difference)
 - CUDA optimizes away empty nodes at runtime - they are purely dependency markers
+
+### Event Node Ping-Pong Test
+
+Test inter-graph synchronization using event record/wait nodes. Two graphs on separate streams alternate execution via events.
+
+```
+Execution: A.sleep0 -> B.sleep0 -> A.sleep1 -> B.sleep1 -> ...
+
+Graph A (stream1): sleep[0] -> record[A0] -> wait[B0] -> sleep[1] -> ...
+Graph B (stream2): wait[A0] -> sleep[0] -> record[B0] -> wait[A1] -> ...
+```
+
+| Method | Description |
+|--------|-------------|
+| `pingpong_2graph` | Two graphs with N kernels each, alternating via 2N-1 events |
+| `single_graph` | One graph with 2N kernels using dependency edges |
+
+**Key findings:**
+- **Construction overhead**: Ping-pong is ~2.7x more expensive (208 us vs 76 us for 128 kernels)
+- **Per-sync overhead**: ~**1500 ns per event record/wait** pair at scale (64 iterations, 127 syncs)
+- **Comparison**: In-graph dependency edges have ~40 ns per-kernel overhead
+- Use single graph with dependency edges when possible; event nodes only for true multi-graph scenarios
 
 ## Planned Implementation
 
