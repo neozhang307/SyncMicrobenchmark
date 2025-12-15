@@ -156,3 +156,20 @@ void Test_StreamCapture_All(unsigned int blocks, unsigned int threads)
            g_incr_overhead_5us, g_incr_overhead_10us, real_overhead);
     printf("=======================================================================\n");
 }
+
+int main(int argc, char **argv)
+{
+    cudaDeviceProp deviceProp;
+    cudaGetDeviceProperties(&deviceProp, 0);
+    cudaCheckError();
+
+    unsigned int smx_count = deviceProp.multiProcessorCount;
+
+    printf("CUDA Graph Stream Capture Scaling Benchmark\n");
+    printf("GPU: %s (SM count: %u)\n", deviceProp.name, smx_count);
+    printf("=======================================================================\n\n");
+
+    Test_StreamCapture_All(smx_count, 1024);
+
+    return 0;
+}

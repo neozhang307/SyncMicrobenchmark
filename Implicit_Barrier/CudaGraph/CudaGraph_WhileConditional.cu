@@ -320,3 +320,20 @@ void Test_WhileConditional(unsigned int blocks, unsigned int threads)
 
     cudaFree(d_counter);
 }
+
+int main(int argc, char **argv)
+{
+    cudaDeviceProp deviceProp;
+    cudaGetDeviceProperties(&deviceProp, 0);
+    cudaCheckError();
+
+    unsigned int smx_count = deviceProp.multiProcessorCount;
+
+    printf("CUDA Graph While Conditional Benchmark\n");
+    printf("GPU: %s (SM count: %u)\n", deviceProp.name, smx_count);
+    printf("=======================================================================\n\n");
+
+    Test_WhileConditional(smx_count, 1024);
+
+    return 0;
+}
