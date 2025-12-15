@@ -70,7 +70,7 @@ From `../run_benchmark.sh`:
 | Memcpy Node | Basic | `cudaGraphAddMemcpyNode` | 10.0 | | Memory copy operations |
 | Memset Node | Basic | `cudaGraphAddMemsetNode` | 10.0 | | Memory set operations |
 | Host Node | Basic | `cudaGraphAddHostNode` | 10.0 | | Host callback function |
-| Child Graph | Basic | `cudaGraphAddChildGraphNode` | 10.0 | | Embed subgraph as node |
+| **Child Graph** | Basic | `cudaGraphAddChildGraphNode` | 10.0 | ✓ | Embed subgraph as node |
 | Empty Node | Basic | `cudaGraphAddEmptyNode` | 10.0 | | Synchronization/dependency point |
 | Event Wait | Event | `cudaGraphAddEventWaitNode` | 11.1 | | Wait for CUDA event |
 | Event Record | Event | `cudaGraphAddEventRecordNode` | 11.1 | | Record CUDA event |
@@ -93,6 +93,22 @@ Compare while conditional loop against alternatives using sleep instruction to s
 | `device_loop` | Single kernel with device-side loop + grid sync per iteration |
 
 Each iteration executes a sleep kernel (~5000 ns workload) to measure per-iteration overhead under realistic conditions.
+
+### Child Graph Iteration Test
+
+Compare iterative execution using child graph composition vs flat graph.
+
+| Method | Description |
+|--------|-------------|
+| `child_graph` | Hierarchical: g1=1 kernel, g2=g1+g1, g4=g2+g2, ..., gN has N iterations |
+| `flat_graph` | Single graph with N kernel nodes in sequence |
+| `merged_flat_NxM` | Merge M copies of flat_N graph using child graph nodes |
+
+**Key findings:**
+- **Construction overhead**: Child graph hierarchy is expensive (411 us for 128 iter) vs flat graph (81 us)
+- **Merged flat overhead**: Merging two flat_64 adds ~18% overhead vs flat_128 directly
+- **Runtime**: All methods have identical per-iteration runtime once instantiated (~39 ns real overhead at 128 iter)
+- CUDA optimizes/flattens the graph structure during instantiation
 
 ## Planned Implementation
 

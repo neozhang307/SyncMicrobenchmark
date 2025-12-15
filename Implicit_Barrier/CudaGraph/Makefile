@@ -18,10 +18,13 @@ CudaGraph_StreamCapture.o: CudaGraph_StreamCapture.cu CudaGraph_Kernel.cuh
 CudaGraph_WhileConditional.o: CudaGraph_WhileConditional.cu CudaGraph_Kernel.cuh
 	nvcc -x cu $(CODEFLAG) -rdc=true -dc -o $@ $<
 
+CudaGraph_ChildGraph.o: CudaGraph_ChildGraph.cu CudaGraph_Kernel.cuh
+	nvcc -x cu $(CODEFLAG) -rdc=true -dc -o $@ $<
+
 CudaGraph.o: CudaGraph.cu CudaGraph_Kernel.cuh
 	nvcc -x cu $(CODEFLAG) -rdc=true -dc -o $@ $<
 
-$(EXECUTABLE): CudaGraph.o CudaGraph_Kernels.o CudaGraph_StreamCapture.o CudaGraph_WhileConditional.o ../../share/util.o
+$(EXECUTABLE): CudaGraph.o CudaGraph_Kernels.o CudaGraph_StreamCapture.o CudaGraph_WhileConditional.o CudaGraph_ChildGraph.o ../../share/util.o
 	nvcc $(CODEFLAG) -rdc=true $(OMPFLAG) -o $@ $^
 
 clean:
