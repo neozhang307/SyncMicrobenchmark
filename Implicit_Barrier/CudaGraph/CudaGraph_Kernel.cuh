@@ -26,3 +26,21 @@ DEC_SLEEP_KERNEL(80);  // 80000 ns = 16 × 5000 ns
 DEC_SLEEP_KERNEL(160); // 160000 ns = 16 × 10000 ns
 
 typedef void (*KernelFunc)();
+
+// Sleep kernel with counter increment (for verification)
+// No atomic needed since kernels execute serially
+#define SLEEP_KERNEL_COUNT(DEP) \
+__global__ void sleep_kernel_count_##DEP(int* counter) \
+{ \
+    repeat##DEP(SLP;); \
+    if (threadIdx.x == 0 && blockIdx.x == 0) { \
+        (*counter)++; \
+    } \
+}
+
+#define DEC_SLEEP_KERNEL_COUNT(DEP) __global__ void sleep_kernel_count_##DEP(int* counter);
+
+DEC_SLEEP_KERNEL_COUNT(5);
+DEC_SLEEP_KERNEL_COUNT(10);
+
+typedef void (*KernelFuncCount)(int*);

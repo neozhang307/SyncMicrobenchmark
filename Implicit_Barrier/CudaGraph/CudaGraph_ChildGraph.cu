@@ -27,6 +27,65 @@ static inline int log2_int(int n) {
 }
 
 //=============================================================================
+// Verify child graph execution by counting kernel invocations
+//=============================================================================
+int verify_child_graph_execution(int iterations, unsigned int blocks, unsigned int threads)
+{
+    assert(is_power_of_2(iterations));
+    int levels = log2_int(iterations) + 1;
+
+    // Allocate device counter
+    int* d_counter;
+    cudaMalloc(&d_counter, sizeof(int));
+    cudaMemset(d_counter, 0, sizeof(int));
+
+    // Build child graph hierarchy with counter kernel
+    cudaGraph_t* graphs = new cudaGraph_t[levels];
+    cudaGraphExec_t graphExec;
+
+    // Level 0: g1 - single kernel with counter
+    cudaGraphCreate(&graphs[0], 0);
+    cudaGraphNode_t kernelNode;
+    cudaKernelNodeParams kernelParams = {};
+    kernelParams.func = (void*)sleep_kernel_count_5;
+    kernelParams.gridDim = dim3(blocks);
+    kernelParams.blockDim = dim3(threads);
+    kernelParams.sharedMemBytes = 0;
+    void* kernelArgs[] = { &d_counter };
+    kernelParams.kernelParams = kernelArgs;
+    kernelParams.extra = NULL;
+    cudaGraphAddKernelNode(&kernelNode, graphs[0], NULL, 0, &kernelParams);
+
+    // Build hierarchy: g[i] = g[i-1] + g[i-1]
+    for (int level = 1; level < levels; level++) {
+        cudaGraphCreate(&graphs[level], 0);
+        cudaGraphNode_t childNode1, childNode2;
+        cudaGraphAddChildGraphNode(&childNode1, graphs[level], NULL, 0, graphs[level - 1]);
+        cudaGraphAddChildGraphNode(&childNode2, graphs[level], &childNode1, 1, graphs[level - 1]);
+    }
+
+    cudaGraphInstantiate(&graphExec, graphs[levels - 1], 0);
+
+    // Execute
+    cudaGraphLaunch(graphExec, 0);
+    cudaDeviceSynchronize();
+
+    // Read counter
+    int h_counter;
+    cudaMemcpy(&h_counter, d_counter, sizeof(int), cudaMemcpyDeviceToHost);
+
+    // Cleanup
+    cudaGraphExecDestroy(graphExec);
+    for (int i = 0; i < levels; i++) {
+        cudaGraphDestroy(graphs[i]);
+    }
+    delete[] graphs;
+    cudaFree(d_counter);
+
+    return h_counter;
+}
+
+//=============================================================================
 // Build child graph hierarchy: g1 -> g2 -> g4 -> ... -> gN
 // Returns array of graphs where graphs[i] has 2^i iterations
 //=============================================================================
@@ -327,6 +386,19 @@ void Test_ChildGraph(unsigned int blocks, unsigned int threads)
     // Test iteration counts (powers of 2)
     int iteration_counts[] = {1, 2, 4, 8, 16, 32, 64, 128};
     int num_tests = sizeof(iteration_counts) / sizeof(iteration_counts[0]);
+
+    // Verify child graph execution
+    printf("=== Verification: Counting Kernel Executions ===\n");
+    printf("iterations\texpected\tactual\tstatus\n");
+    bool all_passed = true;
+    for (int t = 0; t < num_tests; t++) {
+        int iters = iteration_counts[t];
+        int actual = verify_child_graph_execution(iters, blocks, threads);
+        bool passed = (actual == iters);
+        printf("%d\t\t%d\t\t%d\t%s\n", iters, iters, actual, passed ? "PASS" : "FAIL");
+        if (!passed) all_passed = false;
+    }
+    printf("\nVerification: %s\n\n", all_passed ? "ALL PASSED" : "SOME FAILED");
 
     printf("=== Graph Construction Overhead ===\n");
     printf("method\t\titerations\tconstruct(ns)\tlevels\n");
