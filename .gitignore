@@ -6,6 +6,7 @@ Explicit_Barrier/TestRepeat
 Explicit_Barrier/BenchmarkIntraSM
 Explicit_Barrier/BenchmarkInterSM
 Implicit_Barrier/ImplicitBarrier
+Implicit_Barrier/CudaGraph/CudaGraphBench
 Reduction/greduce
 
 # Editor and IDE files
