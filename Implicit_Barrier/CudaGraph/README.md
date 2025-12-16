@@ -94,21 +94,34 @@ Compare while conditional loop against alternatives using sleep instruction to s
 
 Each iteration executes a sleep kernel (~5000 ns workload) to measure per-iteration overhead under realistic conditions.
 
-### Child Graph Iteration Test
+### Child Graph Composition Test
 
-Compare iterative execution using child graph composition vs flat graph.
+Compare different methods of composing child graphs vs flat graph.
 
 | Method | Description |
 |--------|-------------|
-| `child_graph` | Hierarchical: g1=1 kernel, g2=g1+g1, g4=g2+g2, ..., gN has N iterations |
-| `flat_graph` | Single graph with N kernel nodes in sequence |
-| `merged_flat_NxM` | Merge M copies of flat_N graph using child graph nodes |
+| `flat` | N kernels in sequence (no child graphs) |
+| `hierarchy` | Balanced binary tree: g1=1 kernel, g2=g1+g1, g4=g2+g2, ... |
+| `iter_clone` | Clone+insert: clone current graph, insert as child, destroy old |
+| `iter_chain` | Chain of decreasing flats: flat_N/2 + child(flat_N/4 + child(...)) |
+| `merged_flat` | Two equal flats: flat_N/2 + child(flat_N/2) |
+
+**Construction overhead scaling (us):**
+
+| Kernels | flat | hierarchy | iter_clone | iter_chain | merged_flat |
+|---------|------|-----------|------------|------------|-------------|
+| 128 | 78 | 390 | 518 | 114 | 80 |
+| 256 | 159 | 923 | 1159 | 222 | 165 |
+| 512 | 339 | 2398 | 2801 | 446 | 364 |
 
 **Key findings:**
-- **Construction overhead**: Child graph hierarchy is expensive (411 us for 128 iter) vs flat graph (81 us)
-- **Merged flat overhead**: Merging two flat_64 adds ~18% overhead vs flat_128 directly
-- **Runtime**: All methods have identical per-iteration runtime once instantiated (~39 ns real overhead at 128 iter)
-- CUDA optimizes/flattens the graph structure during instantiation
+- **merged_flat is best for child graphs**: Only +7% overhead vs flat at 512 kernels
+- **iter_chain is 5x faster than hierarchy** at 512 kernels (446us vs 2398us)
+- **cudaGraphClone is expensive**: iter_clone is slowest due to clone overhead
+- **hierarchy/iter_clone scale badly**: Deep child tree causes high instantiate cost
+- **Runtime identical**: All methods have same per-kernel overhead (~10 ns at 512) - CUDA flattens graph structure
+
+**Recommendation**: Use `merged_flat` (flat_N/2 + child(flat_N/2)) when you need child graphs - nearly same overhead as flat with simple structure.
 
 ### Empty Node Overhead Test
 
