@@ -94,6 +94,8 @@ Compare while conditional loop against alternatives using sleep instruction to s
 
 Each iteration executes a sleep kernel (~5000 ns workload) to measure per-iteration overhead under realistic conditions.
 
+**Executable**: `bench_while_conditional`
+
 ### Child Graph Composition Test
 
 Compare different methods of composing child graphs vs flat graph.
@@ -123,6 +125,8 @@ Compare different methods of composing child graphs vs flat graph.
 
 **Recommendation**: Use `merged_flat` (flat_N/2 + child(flat_N/2)) when you need child graphs - nearly same overhead as flat with simple structure.
 
+**Executable**: `bench_child_graph`
+
 ### Empty Node Overhead Test
 
 Compare flat graphs with and without empty nodes to measure empty node overhead.
@@ -136,6 +140,8 @@ Compare flat graphs with and without empty nodes to measure empty node overhead.
 - **Construction overhead**: Empty nodes add ~60% construction overhead (87 us → 138 us for 128 iter)
 - **Runtime overhead**: Empty nodes add **zero runtime overhead** (~0 ns difference)
 - CUDA optimizes away empty nodes at runtime - they are purely dependency markers
+
+**Executable**: `bench_empty_node`
 
 ### Event Node Ping-Pong Test
 
@@ -160,6 +166,8 @@ Graph B (stream2): wait[A0] -> sleep[0] -> record[B0] -> wait[A1] -> ...
 - **Per-sync overhead**: ~**1500-1570 ns per event record/wait** pair at scale (64 iterations, 127 syncs)
 - **Dependency edge overhead**: Adding extra dependencies (ppdeps) has no runtime cost - CUDA optimizes them away
 - Use single graph with dependency edges when possible; event nodes only for true multi-graph scenarios
+
+**Executable**: `bench_event_node`
 
 ### Device Graph Launch Test (CUDA 12.0+)
 
@@ -193,6 +201,44 @@ Compare device-side graph launch (from within a kernel) vs host-side launch.
 - At 100 launches: device is **20x faster** than host (10 us vs 208 us total)
 
 **Recommendation**: Use device graph launch when launching multiple graphs from GPU. Use fire-and-forget for parallel workloads, tail launch for sequential iterations.
+
+**Executable**: `bench_device_launch`
+
+### Graph Upload Overhead Test (CUDA 12.0+)
+
+Measure overhead of `cudaGraphInstantiate` and `cudaGraphUpload` for device-launchable graphs, and test contention with concurrent GPU workloads.
+
+| Test | Description |
+|------|-------------|
+| API overhead | Time for `cudaGraphInstantiate` and `cudaGraphUpload` to return |
+| Re-upload | First upload vs subsequent re-uploads of same graph |
+| Contention (compute) | cuBLAS SGEMM performance during concurrent uploads |
+| Contention (memory) | Stream copy bandwidth during concurrent uploads |
+
+**API Overhead (CPU-side, per graph):**
+
+| Operation | 1 kernel | 16 kernels | 64 kernels | 256 kernels |
+|-----------|----------|------------|------------|-------------|
+| Instantiate (regular) | 2.8 us | 9.5 us | 28.5 us | 109 us |
+| Instantiate (device) | 4.5 us | 10.5 us | 28 us | 109 us |
+| Upload (first) | 3.6 us | 5.9 us | 7.6 us | 17 us |
+| Upload (re-upload) | 1.7 us | 1.7 us | 1.7 us | 1.7 us |
+
+**Contention Test Results (separate CUDA events per stream):**
+
+| Workload | Baseline | With 2000 uploads | Slowdown |
+|----------|----------|-------------------|----------|
+| cuBLAS SGEMM 4096x4096 | 7.5 ms, 18.2 TFLOPS | 7.6 ms, 18.1 TFLOPS | <1% |
+| Stream copy 1GB | 8.6 ms, 248 GB/s | 8.7 ms, 248 GB/s | <0.1% |
+
+**Key findings:**
+- **Device instantiate ~same cost** as regular instantiate for large graphs
+- **Re-upload is 10x cheaper** than first upload (1.7 us vs 17 us at 256 kernels)
+- **Zero contention**: Upload on separate stream does not affect kernel performance
+- **Upload scales linearly**: ~1.4 us/upload (compute), ~3.3 us/upload (memory)
+- Safe to upload graphs during GPU computation
+
+**Executable**: `bench_graph_upload`
 
 ## Planned Implementation
 
