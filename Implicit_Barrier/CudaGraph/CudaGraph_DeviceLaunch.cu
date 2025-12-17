@@ -680,6 +680,160 @@ void Test_APICallOverhead(unsigned int blocks, unsigned int threads)
 }
 
 //=============================================================================
+// Test 6: Can a regular kernel (not in a graph) launch a CUDA graph?
+//=============================================================================
+__global__ void regular_kernel_launch_graph(cudaGraphExec_t graphExec, int* result) {
+    if (threadIdx.x == 0 && blockIdx.x == 0) {
+        cudaError_t err = cudaGraphLaunch(graphExec, cudaStreamGraphFireAndForget);
+        *result = (int)err;
+    }
+}
+
+//=============================================================================
+// Test 7: Can we update graph parameters from device code?
+// Test using indirect parameter passing via device memory
+//=============================================================================
+__global__ void param_kernel(int* param, int* output) {
+    if (threadIdx.x == 0 && blockIdx.x == 0) {
+        *output = *param * 2;  // Read param from device memory
+    }
+}
+
+__global__ void update_param_kernel(int* param, int new_value) {
+    if (threadIdx.x == 0 && blockIdx.x == 0) {
+        *param = new_value;  // Update param in device memory
+    }
+}
+
+void Test_RegularKernelLaunchGraph(unsigned int blocks, unsigned int threads)
+{
+    printf("=== Test 6: Regular Kernel Launching CUDA Graph ===\n");
+    printf("Test if a regular kernel (not part of a graph) can call cudaGraphLaunch\n\n");
+
+    // Build a simple device-launchable graph
+    cudaGraph_t graph;
+    cudaGraphExec_t graphExec;
+    cudaGraphCreate(&graph, 0);
+
+    // Add a simple kernel node
+    cudaGraphNode_t kernelNode;
+    cudaKernelNodeParams kernelParams = {};
+    kernelParams.func = (void*)sleep_kernel_5;
+    kernelParams.gridDim = dim3(1);
+    kernelParams.blockDim = dim3(1);
+    kernelParams.sharedMemBytes = 0;
+    kernelParams.kernelParams = NULL;
+    kernelParams.extra = NULL;
+    cudaGraphAddKernelNode(&kernelNode, graph, NULL, 0, &kernelParams);
+
+    // Instantiate with device launch flag
+    cudaGraphInstantiate(&graphExec, graph, cudaGraphInstantiateFlagDeviceLaunch);
+    cudaGraphUpload(graphExec, 0);
+
+    // Allocate result
+    int* d_result;
+    int h_result = -1;
+    cudaMalloc(&d_result, sizeof(int));
+    cudaMemset(d_result, -1, sizeof(int));
+
+    // Launch a REGULAR kernel (not a graph) that tries to launch the graph
+    printf("Launching regular kernel that calls cudaGraphLaunch...\n");
+    regular_kernel_launch_graph<<<1, 1>>>(graphExec, d_result);
+    cudaError_t launch_err = cudaGetLastError();
+    cudaDeviceSynchronize();
+    cudaError_t sync_err = cudaGetLastError();
+
+    cudaMemcpy(&h_result, d_result, sizeof(int), cudaMemcpyDeviceToHost);
+
+    printf("Kernel launch error: %s\n", cudaGetErrorString(launch_err));
+    printf("Sync error: %s\n", cudaGetErrorString(sync_err));
+    printf("Device-side cudaGraphLaunch returned: %d (%s)\n\n",
+           h_result, h_result == 0 ? "cudaSuccess" : "error");
+
+    if (launch_err == cudaSuccess && sync_err == cudaSuccess && h_result == 0) {
+        printf("SUCCESS: Regular kernel CAN launch CUDA graphs!\n");
+    } else {
+        printf("FAILED: Regular kernel cannot launch CUDA graphs from outside a graph context\n");
+    }
+
+    cudaFree(d_result);
+    cudaGraphExecDestroy(graphExec);
+    cudaGraphDestroy(graph);
+    printf("\n");
+}
+
+//=============================================================================
+// Test 7: Indirect parameter update via device memory
+// Graph reads from device memory pointer, kernel updates that memory
+//=============================================================================
+void Test_IndirectParamUpdate(unsigned int blocks, unsigned int threads)
+{
+    printf("=== Test 7: Indirect Parameter Update via Device Memory ===\n");
+    printf("Graph kernel reads from device memory, another kernel updates it\n\n");
+
+    // Allocate param and output in device memory
+    int* d_param;
+    int* d_output;
+    cudaMalloc(&d_param, sizeof(int));
+    cudaMalloc(&d_output, sizeof(int));
+
+    // Initialize param to 10
+    int initial_value = 10;
+    cudaMemcpy(d_param, &initial_value, sizeof(int), cudaMemcpyHostToDevice);
+
+    // Build graph that reads from d_param
+    cudaGraph_t graph;
+    cudaGraphExec_t graphExec;
+    cudaGraphCreate(&graph, 0);
+
+    cudaGraphNode_t kernelNode;
+    cudaKernelNodeParams kernelParams = {};
+    kernelParams.func = (void*)param_kernel;
+    kernelParams.gridDim = dim3(1);
+    kernelParams.blockDim = dim3(1);
+    kernelParams.sharedMemBytes = 0;
+    void* args[] = { &d_param, &d_output };
+    kernelParams.kernelParams = args;
+    kernelParams.extra = NULL;
+    cudaGraphAddKernelNode(&kernelNode, graph, NULL, 0, &kernelParams);
+
+    cudaGraphInstantiate(&graphExec, graph, 0);
+
+    // Launch graph with initial param (10)
+    cudaGraphLaunch(graphExec, 0);
+    cudaDeviceSynchronize();
+
+    int result1;
+    cudaMemcpy(&result1, d_output, sizeof(int), cudaMemcpyDeviceToHost);
+    printf("Initial: param=10, output=%d (expected 20)\n", result1);
+
+    // Update param using a kernel (simulating device-side update)
+    update_param_kernel<<<1, 1>>>(d_param, 25);
+    cudaDeviceSynchronize();
+
+    // Launch same graph again - should use new param value
+    cudaGraphLaunch(graphExec, 0);
+    cudaDeviceSynchronize();
+
+    int result2;
+    cudaMemcpy(&result2, d_output, sizeof(int), cudaMemcpyDeviceToHost);
+    printf("After kernel update: param=25, output=%d (expected 50)\n", result2);
+
+    if (result1 == 20 && result2 == 50) {
+        printf("\nSUCCESS: Indirect parameter update works!\n");
+        printf("Workaround: Pass device memory pointers to graph, update memory from kernels\n");
+    } else {
+        printf("\nFAILED: Indirect parameter update did not work as expected\n");
+    }
+
+    cudaFree(d_param);
+    cudaFree(d_output);
+    cudaGraphExecDestroy(graphExec);
+    cudaGraphDestroy(graph);
+    printf("\n");
+}
+
+//=============================================================================
 // Main
 //=============================================================================
 int main(int argc, char **argv)
@@ -707,6 +861,8 @@ int main(int argc, char **argv)
     Test_TailLaunch(smx_count, 1024);
     Test_HostVsDevice(smx_count, 1024);
     Test_APICallOverhead(smx_count, 1024);
+    Test_RegularKernelLaunchGraph(smx_count, 1024);
+    Test_IndirectParamUpdate(smx_count, 1024);
 
     return 0;
 }
