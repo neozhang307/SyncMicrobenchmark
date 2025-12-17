@@ -21,6 +21,10 @@ __global__ void sleep_kernel_##DEP() \
 DEC_SLEEP_KERNEL(5);   // 5000 ns (basic)
 DEC_SLEEP_KERNEL(10);  // 10000 ns (basic)
 
+// Extended kernels: for dual-workload method validation
+DEC_SLEEP_KERNEL(20);  // 20000 ns
+DEC_SLEEP_KERNEL(40);  // 40000 ns
+
 // Fused kernels: 16× the basic workload (for eliminating workload uncertainty)
 DEC_SLEEP_KERNEL(80);  // 80000 ns = 16 × 5000 ns
 DEC_SLEEP_KERNEL(160); // 160000 ns = 16 × 10000 ns

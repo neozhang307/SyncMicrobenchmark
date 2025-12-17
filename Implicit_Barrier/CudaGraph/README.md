@@ -161,6 +161,39 @@ Graph B (stream2): wait[A0] -> sleep[0] -> record[B0] -> wait[A1] -> ...
 - **Dependency edge overhead**: Adding extra dependencies (ppdeps) has no runtime cost - CUDA optimizes them away
 - Use single graph with dependency edges when possible; event nodes only for true multi-graph scenarios
 
+### Device Graph Launch Test (CUDA 12.0+)
+
+Compare device-side graph launch (from within a kernel) vs host-side launch.
+
+| Method | Description |
+|--------|-------------|
+| `host_launch` | Host-side `cudaGraphLaunch` in a loop |
+| `device_fire_forget` | Device-side launch via `cudaStreamGraphFireAndForget` (parallel) |
+| `device_tail_launch` | Self-relaunch via `cudaStreamGraphTailLaunch` (sequential) |
+
+**API Call Overhead (time for cudaGraphLaunch to return):**
+
+| Location | Overhead | Measurement Method |
+|----------|----------|-------------------|
+| Host-side | ~1600 ns | chrono before sync |
+| Device-side | ~500 ns | clock64() inside kernel |
+
+**Per-Launch Execution Overhead:**
+
+| Method | Overhead | Notes |
+|--------|----------|-------|
+| Host launch | ~2000 ns/launch | API + scheduling + sync |
+| Device fire-and-forget | ~100 ns/launch | Amortized (parallel execution) |
+| Device tail launch | ~3100 ns/iteration | Sequential (waits for completion) |
+
+**Key findings:**
+- **Device API call is 3x faster** than host (~500 ns vs ~1600 ns)
+- **Fire-and-forget launches execute in parallel** - constant ~10 us overhead regardless of launch count
+- **Tail launch is sequential** - each iteration waits for previous to complete (~3100 ns/iter)
+- At 100 launches: device is **20x faster** than host (10 us vs 208 us total)
+
+**Recommendation**: Use device graph launch when launching multiple graphs from GPU. Use fire-and-forget for parallel workloads, tail launch for sequential iterations.
+
 ## Planned Implementation
 
 ### Phase 1: Graph Creation Analysis
