@@ -80,6 +80,8 @@ From `../run_benchmark.sh`:
 | Memory Free | Memory | `cudaGraphAddMemFreeNode` | 11.4 | | Free memory in graph |
 | If Conditional | Conditional | `cudaGraphConditionalHandleCreate` | 12.4 | | Conditional branch execution |
 | **While Conditional** | Conditional | `cudaGraphConditionalHandleCreate` | 12.4 | ✓ | Loop execution in graph |
+| **Device Launch** | Launch | `cudaGraphLaunch` (device-side) | 12.0 | ✓ | Launch graph from GPU kernel |
+| **Graph Upload** | Launch | `cudaGraphUpload` | 12.0 | ✓ | Upload graph to device for device launch |
 
 ### While Conditional Overhead Test
 
