@@ -7,9 +7,6 @@
 	#define SIZE 101
 #endif
 
-int measureInterSMLatency(latencys* result, launchfunction_rkernel run_func, 
-	fbaseKernel kernel_func, unsigned int gpu_count,
-	unsigned int blockPerGPU, unsigned int threadPerBlock);
 //suceess when return 1
 int measureIntraSMLatency(latencys* result, 
 	launchfunction_rkernel run_func, fbaseKernel kernel_func,

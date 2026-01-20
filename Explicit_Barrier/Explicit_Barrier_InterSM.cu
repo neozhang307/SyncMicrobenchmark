@@ -30,6 +30,7 @@ void benchmarkLatencyInterSM(launchfunction_rkernel run_func,
 				1, 32);
 
 	prepare_showLatencyInterSM();
+	
 	for(unsigned int basic=1; basic<=uplimit; basic*=2)
 	{
 		unsigned int blockPerGPU=smx_count*basic;

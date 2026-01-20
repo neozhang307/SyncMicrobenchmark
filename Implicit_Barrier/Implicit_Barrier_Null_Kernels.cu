@@ -70,7 +70,7 @@ void Test_Null_Kernel_MGPU(unsigned int block_perGPU, unsigned int thread_perBlo
 
 	latencys* result  = (latencys*)malloc(2*sizeof(latencys));
 	
-	NULL_KERNEL_TEST_8GPU(multi_cooperative_launch,1,128,block_perGPU,thread_perBlock);
+	// REMOVED NULL_KERNEL_TEST_8GPU(multi_cooperative_launch,1,128,block_perGPU,thread_perBlock);
 	NULL_KERNEL_TEST_8GPU(omp_traditional_launch,1,128,block_perGPU,thread_perBlock);
 
 	free(result);

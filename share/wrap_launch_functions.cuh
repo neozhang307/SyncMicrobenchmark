@@ -1,28 +1,23 @@
-// #include "Implicit_Barrier_Kernel.cuh"
 #include "repeat.h"
+#include <omp.h>
 
 typedef void (*nKernel)();
 typedef void (*fbaseKernel)(float,float,double*,unsigned int*,unsigned int*, unsigned int);
 
 typedef void(*launchfunction_nkernel)(nKernel, 
 	unsigned int, unsigned int, 
-	unsigned int, cudaLaunchParams*);
+	unsigned int);
 
 typedef void(*launchfunction_rkernel)(fbaseKernel, 
 	unsigned int, unsigned int, 
-	void**, unsigned int, 
-	cudaLaunchParams*);
+	void**, unsigned int);
 
 #ifndef DEF_WRAP_LAUNCH_FUNCTION
 
 void __forceinline__ traditional_launch(fbaseKernel func,
 	unsigned int blockPerGPU,unsigned int threadPerBlock, void** KernelArgs, 
-	unsigned int GPU_count=1, cudaLaunchParams *launchParamsList=NULL)
+	unsigned int GPU_count=1)
 {
-	if(NULL==KernelArgs&&NULL!=launchParamsList)
-	{
-		KernelArgs=launchParamsList[0].args;
-	}
 	func<<<blockPerGPU,threadPerBlock>>>(((float*)KernelArgs[0])[0],((float*)KernelArgs[1])[0],
 		((double**)KernelArgs[2])[0],((unsigned int**)KernelArgs[3])[0],
 		((unsigned int**)KernelArgs[4])[0],(( unsigned int*)KernelArgs[5])[0]);
@@ -30,59 +25,41 @@ void __forceinline__ traditional_launch(fbaseKernel func,
 
 void __forceinline__ cooperative_launch(fbaseKernel func,
 	unsigned int blockPerGPU,unsigned int threadPerBlock, void** KernelArgs, 
-	unsigned int GPU_count=1, cudaLaunchParams *launchParamsList=NULL)
+	unsigned int GPU_count=1)
 {
-	if(NULL==KernelArgs&&NULL!=launchParamsList)
-	{
-		KernelArgs=launchParamsList[0].args;
-	}
 	cudaLaunchCooperativeKernel((void*)func, blockPerGPU,threadPerBlock,KernelArgs,32,0);
 }
 
-void __forceinline__ multi_cooperative_launch(fbaseKernel func,
-	unsigned int blockPerGPU, unsigned int threadPerBlock, void** KernelArgs,
-	unsigned int GPU_count=1, cudaLaunchParams *launchParamsList=NULL)
+void __forceinline__ traditional_launch(nKernel func, unsigned int blockPerGPU,unsigned int threadPerBlock, unsigned int GPU_count=1)
 {
-	cudaLaunchCooperativeKernelMultiDevice(launchParamsList, GPU_count);
+	func<<<blockPerGPU,threadPerBlock>>> ();
 }
 
-
-void __forceinline__ traditional_launch(nKernel func, unsigned int blockPerGPU,unsigned int threadPerBlock, unsigned int GPU_count=1, cudaLaunchParams *launchParamsList=NULL)
-{
-	func<<<blockPerGPU,threadPerBlock>>>();
-}
-
-void __forceinline__ cooperative_launch(nKernel func,unsigned int blockPerGPU,unsigned int threadPerBlock, unsigned int GPU_count=1, cudaLaunchParams *launchParamsList=NULL)
+void __forceinline__ cooperative_launch(nKernel func,unsigned int blockPerGPU,unsigned int threadPerBlock, unsigned int GPU_count=1)
 {
 	void*KernelArgs[] = {};
 	cudaLaunchCooperativeKernel((void*)func, blockPerGPU,threadPerBlock,KernelArgs,32,0);
 }
 
-void __forceinline__ multi_cooperative_launch(nKernel func,unsigned int blockPerGPU,unsigned int threadPerBlock, unsigned int GPU_count=1, cudaLaunchParams *launchParamsList=NULL)
+#define repeatlaunch(fname, DEP) 
+void __forceinline__ fname##_##DEP(nKernel func,unsigned int blockPerGPU,unsigned int threadPerBlock, unsigned int GPU_count=1)
 {
-	cudaLaunchCooperativeKernelMultiDevice(launchParamsList, GPU_count);
+	repeat##DEP(fname(func,blockPerGPU,threadPerBlock,GPU_count););
 }
 
-#define repeatlaunch(fname, DEP) \
-void __forceinline__ fname##_##DEP(nKernel func,unsigned int blockPerGPU,unsigned int threadPerBlock, unsigned int GPU_count=1, cudaLaunchParams *launchParamsList=NULL)\
-{\
-	repeat##DEP(fname(func,blockPerGPU,threadPerBlock,GPU_count,launchParamsList););\
-}
+#define gencallfun(callfunc) 
+	repeatlaunch(callfunc,1); 
+	repeatlaunch(callfunc,16); 
+	repeatlaunch(callfunc,128); 
 
-#define gencallfun(callfunc) \
-	repeatlaunch(callfunc,1); \
-	repeatlaunch(callfunc,16); \
-	repeatlaunch(callfunc,128); \
 
 gencallfun(traditional_launch);
 gencallfun(cooperative_launch);
-gencallfun(multi_cooperative_launch);
 
 //only for single GPU
-#include<omp.h>
 
 //The way to repeat omp function is a little different here. Because I found I can not include #pragma statement in MACRO
-void __forceinline__ single_omp_traditional_launch(nKernel func,unsigned int blockPerGPU,unsigned int threadPerBlock, unsigned int GPU_count=2, cudaLaunchParams *launchParamsList=NULL, unsigned int repeat=2)
+void __forceinline__ single_omp_traditional_launch(nKernel func,unsigned int blockPerGPU,unsigned int threadPerBlock, unsigned int GPU_count=2, unsigned int repeat=2)
 {
 	#pragma omp parallel num_threads(GPU_count)
 	{
@@ -91,7 +68,7 @@ void __forceinline__ single_omp_traditional_launch(nKernel func,unsigned int blo
 		cudaSetDevice(tid);
 		for(int j=0; j<repeat; j++)
 		{
-		func<<<blockPerGPU,threadPerBlock,0,launchParamsList[tid].stream>>>();
+		func<<<blockPerGPU,threadPerBlock,0,0>>>();
 			cudaDeviceSynchronize();
 			#pragma omp barrier
 		}
@@ -100,10 +77,10 @@ void __forceinline__ single_omp_traditional_launch(nKernel func,unsigned int blo
 }
 
 //A little different here
-#define repeatomp(DEP) \
-void __forceinline__ omp_traditional_launch##_##DEP(nKernel func,unsigned int blockPerGPU,unsigned int threadPerBlock, unsigned int GPU_count=2, cudaLaunchParams *launchParamsList=NULL)\
-{\
-	single_omp_traditional_launch(func,blockPerGPU,threadPerBlock,GPU_count,launchParamsList,DEP);\
+#define repeatomp(DEP) 
+void __forceinline__ omp_traditional_launch##_##DEP(nKernel func,unsigned int blockPerGPU,unsigned int threadPerBlock, unsigned int GPU_count=2)
+{
+	single_omp_traditional_launch(func,blockPerGPU,threadPerBlock,GPU_count,DEP);
 }
 
 repeatomp(1);

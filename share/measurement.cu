@@ -1,4 +1,3 @@
-
 #include"measurement.cuh"
 #include "wrap_launch_functions.cuh"
 #include "../share/util.h"
@@ -20,7 +19,7 @@ int measureIntraSMLatency(latencys* result,
 
 		double * d_out;
 		unsigned int totalThreadsPerGPU = blockPerGPU*threadPerBlock;
-		cudaMalloc((void **)&d_out, sizeof(double) * totalThreadsPerGPU*1);	
+		cudaMalloc((void **)&d_out, sizeof(double) * totalThreadsPerGPU*1); 	
 		unsigned int warp_count=blockPerGPU*threadPerBlock/32;
 
 	 	unsigned int * h_time_stamp = (unsigned int*)malloc(sizeof(unsigned int)*warp_count*2); 
@@ -52,7 +51,7 @@ int measureIntraSMLatency(latencys* result,
 			//clock
 			clock_gettime(CLOCK_REALTIME, &tsstart);
 			//launch
-			run_func(kernel_func,blockPerGPU,threadPerBlock,KernelArgs,1,NULL);
+			run_func(kernel_func,blockPerGPU,threadPerBlock,KernelArgs,1);
 			cudaDeviceSynchronize();
 			clock_gettime(CLOCK_REALTIME, &tsend);
 			//execution
@@ -70,8 +69,8 @@ int measureIntraSMLatency(latencys* result,
 			e=cudaGetLastError();                                 
 	 		if(e!=cudaSuccess) {                                              
 	   			fprintf(stderr,"Cuda failure %s:%d: '%s'\n",__FILE__,__LINE__,cudaGetErrorString(e)); 
-				errorcode=-1;
-				break;
+								errorcode=-1;
+								break;
 	 		}
 		}
 		cudaCheckError();
@@ -86,132 +85,16 @@ int measureIntraSMLatency(latencys* result,
 		free(h_time_stamp);
 		free(h_idx);
 
-		// e=cudaGetLastError();                                 
- 	// 	if(e!=cudaSuccess) {                                              
-  //  			fprintf(stderr,"Cuda failure %s:%d: '%s'\n",__FILE__,__LINE__,cudaGetErrorString(e)); 
-		// 	errorcode=-1;
- 	// 	}
-
  		if(errorcode!=1)
  		{
-	 		cudaDeviceReset();
-			return -1;
+	 			cudaDeviceReset();
+				return -1;
  		}
 
 		return 1;
 	}
 }
-//2. measure latencys in ns (involve several SMs) TODO
-int measureInterSMLatency(latencys* result, 
-	launchfunction_rkernel run_func, fbaseKernel kernel_func, 
-	unsigned int gpu_count,
-	unsigned int blockPerGPU, unsigned int threadPerBlock)
-{
-	{
-		int errorcode=1;
-		cudaError_t e;
 
-		cudaStream_t *mstream = (cudaStream_t*)malloc(sizeof(cudaStream_t)*gpu_count);
-		void***packedKernelArgs = (void***)malloc(sizeof(void**)*gpu_count); 
-		cudaLaunchParams *launchParamsList = (cudaLaunchParams *)malloc(
-      		sizeof(cudaLaunchParams)*gpu_count);
-
-		float a=2;
-		float b=2;
-		double **d_out = (double**)malloc(sizeof(double)*gpu_count);
-		unsigned int* nptr=NULL;
-		unsigned int tile=32;
-
-		for(int deviceid=0; deviceid<gpu_count;deviceid++)
-		{
-			cudaSetDevice(deviceid);
-			packedKernelArgs[deviceid]=(void**)malloc(sizeof(void*)*6);
-
-			cudaStreamCreate(&mstream[deviceid]);
-
-			cudaCheckError();
-			cudaMalloc((void**)&d_out[deviceid], sizeof(double));
-			packedKernelArgs[deviceid][0]=(void*)&a;
-			packedKernelArgs[deviceid][1]=(void*)&b;
-			packedKernelArgs[deviceid][2]=(void*)&d_out[deviceid];
-			packedKernelArgs[deviceid][3]=(void*)&nptr;
-			packedKernelArgs[deviceid][4]=(void*)&nptr;
-			packedKernelArgs[deviceid][5]=(void*)&tile;
-			
-			launchParamsList[deviceid].func=(void*)kernel_func;
-			launchParamsList[deviceid].gridDim=blockPerGPU;
-			launchParamsList[deviceid].blockDim=threadPerBlock;
-			launchParamsList[deviceid].sharedMem=32;
-			launchParamsList[deviceid].stream=mstream[deviceid];
-			launchParamsList[deviceid].args=packedKernelArgs[deviceid];
-		}
-		cudaCheckError(); 
-
-		timespec tsstart,tsendop;
-		long time_elapsed_ns ;
-		double latency_lat[SIZE];
-		
-		for(int i=0; i<SIZE; i++)
-		{
-
-			clock_gettime(CLOCK_REALTIME, &tsstart);
-			run_func(kernel_func,blockPerGPU,threadPerBlock,NULL, gpu_count,launchParamsList);
-			for(int deviceid=0; deviceid<gpu_count; deviceid++)
-			{
-				cudaSetDevice(deviceid);
-				cudaDeviceSynchronize();
-				cudaStreamSynchronize(mstream[deviceid]);
-			}
- 			clock_gettime(CLOCK_REALTIME, &tsendop);
-
-	 		//latencys of total kernel total latency (after sync)
-			time_elapsed_ns = (tsendop.tv_nsec-tsstart.tv_nsec);
-	 		time_elapsed_ns += 1000000000*(tsendop.tv_sec-tsstart.tv_sec);
-	 		latency_lat[i]=time_elapsed_ns;
-	 		e=cudaGetLastError();                                 
- 			if(e!=cudaSuccess) {                                              
-	   			fprintf(stderr,"Cuda failure %s:%d: '%s'\n",__FILE__,__LINE__,cudaGetErrorString(e)); 
-	   			for(int deviceid=0; deviceid<gpu_count;deviceid++)
-				{
-					cudaSetDevice(deviceid);	
-		 			cudaDeviceReset();
-				}
-				errorcode=-1;
-				break;
-	 		}
-
-		}
-		// cudaCheckError();
-		getStatistics(result->mean_lat, result->s_lat, latency_lat+1, SIZE-1);
-
-		for(int deviceid=0; deviceid<gpu_count;deviceid++)
-		{
-			cudaSetDevice(deviceid);	
- 			cudaStreamDestroy(mstream[deviceid]);
-			cudaFree(d_out[deviceid]);
-		}
-
-		free(mstream);
-		free(packedKernelArgs);
-		free(launchParamsList);
-		free(d_out);
-		// e=cudaGetLastError();                                 
- 	// 	if(e!=cudaSuccess) {                                              
-  //  			fprintf(stderr,"Cuda failure %s:%d: '%s'\n",__FILE__,__LINE__,cudaGetErrorString(e)); 
-		// 	errorcode=-1;
- 	// 	}
- 		if(errorcode!=1)
- 		{
- 			for(int deviceid=0; deviceid<gpu_count;deviceid++)
-			{
-				cudaSetDevice(deviceid);	
-	 			cudaDeviceReset();
-			}
-			return -1;
- 		}
- 		return 1;
-	}
-}
 //3. mearsure kernel latency 
 
 template <int gpu_count>
@@ -220,29 +103,9 @@ void measureKernelLatency(latencys* result,
 	unsigned int blockPerGPU, unsigned int threadPerBlock)
 {
 	{
-		cudaStream_t *mstream = (cudaStream_t*)malloc(sizeof(cudaStream_t)*gpu_count);
-		void***packedKernelArgs = (void***)malloc(sizeof(void**)*gpu_count); 
-		cudaLaunchParams *launchParamsList = (cudaLaunchParams *)malloc(
-      		sizeof(cudaLaunchParams)*gpu_count);
+		// Removed launchParamsList related code as it's not needed for nKernel (no args)
+		// and cudaLaunchParams is not available.
 
-		for(int deviceid=0; deviceid<gpu_count;deviceid++)
-		{
-			cudaSetDevice(deviceid);
-			packedKernelArgs[deviceid]=(void**)malloc(sizeof(void*));
-
-			cudaStreamCreate(&mstream[deviceid]);
-
-			cudaCheckError();
-
-			packedKernelArgs[deviceid][0]=NULL;
-			
-			launchParamsList[deviceid].func=(void*)kernel_func;
-			launchParamsList[deviceid].gridDim=blockPerGPU;
-			launchParamsList[deviceid].blockDim=threadPerBlock;
-			launchParamsList[deviceid].sharedMem=32;
-			launchParamsList[deviceid].stream=mstream[deviceid];
-			launchParamsList[deviceid].args=packedKernelArgs[deviceid];
-		}
 		cudaCheckError(); 
 
 		timespec ini,tsstart,tsend,tsendop,tsendsync;
@@ -258,7 +121,7 @@ void measureKernelLatency(latencys* result,
 			clock_gettime(CLOCK_REALTIME, &ini);
 			clock_gettime(CLOCK_REALTIME, &tsstart);
 			//launch
-			run_func(kernel_func,blockPerGPU,threadPerBlock,gpu_count,launchParamsList);
+			run_func(kernel_func,blockPerGPU,threadPerBlock,gpu_count);
 			clock_gettime(CLOCK_REALTIME, &tsend);
 			//execution
 			if(gpu_count==0)
@@ -271,7 +134,6 @@ void measureKernelLatency(latencys* result,
 				{
 					cudaSetDevice(deviceid);
 					cudaDeviceSynchronize();
-					cudaStreamSynchronize(mstream[deviceid]);
 				}
 			}
  			clock_gettime(CLOCK_REALTIME, &tsendop);
@@ -285,7 +147,6 @@ void measureKernelLatency(latencys* result,
 				{
 					cudaSetDevice(deviceid);
 					cudaDeviceSynchronize();
-					cudaStreamSynchronize(mstream[deviceid]);
 				}
 			}
  			clock_gettime(CLOCK_REALTIME, &tsendsync);
@@ -316,16 +177,6 @@ void measureKernelLatency(latencys* result,
 		getStatistics(result->mean_lat, result->s_lat, latency_lat+1, SIZE-1);
 		getStatistics(result->mean_sync, result->s_sync, latency_syncfunc+1, SIZE-1);
 
-		for(int deviceid=0; deviceid<gpu_count;deviceid++)
-		{
-			cudaSetDevice(deviceid);	
-			cudaCheckError();
-			cudaStreamDestroy(mstream[deviceid]);
-		}
-
-		free(mstream);
-		free(packedKernelArgs);
-		free(launchParamsList);
 	}
 }
 

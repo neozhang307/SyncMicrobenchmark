@@ -59,35 +59,35 @@ void Test_Sleep_Kernel_MGPU(unsigned int block_perGPU, unsigned int thread_perBl
 
 	if(gpu_count>=1)
 	{
-		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_5, null_kernel_80, 1, block_perGPU, thread_perBlock,5000);
+		// REMOVED PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_5, null_kernel_80, 1, block_perGPU, thread_perBlock,5000);
 	}
 	if(gpu_count>=2)
 	{
-		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_15, null_kernel_240, 2, block_perGPU, thread_perBlock,15000);
+		// REMOVED PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_15, null_kernel_240, 2, block_perGPU, thread_perBlock,15000);
 	}
 	if(gpu_count>=3)
 	{
-		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_30, null_kernel_480, 3, block_perGPU, thread_perBlock,30000);
+		// REMOVED PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_30, null_kernel_480, 3, block_perGPU, thread_perBlock,30000);
 	}
 	if(gpu_count>=4)
 	{
-		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_50, null_kernel_800, 4, block_perGPU, thread_perBlock,50000);
+		// REMOVED PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_50, null_kernel_800, 4, block_perGPU, thread_perBlock,50000);
 	}
 	if(gpu_count>=5)
 	{
-		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_80, null_kernel_1280, 5, block_perGPU, thread_perBlock,80000);
+		// REMOVED PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_80, null_kernel_1280, 5, block_perGPU, thread_perBlock,80000);
 	}
 	if(gpu_count>=6)
 	{
-		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_105, null_kernel_1680, 6, block_perGPU, thread_perBlock,105000);
+		// REMOVED PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_105, null_kernel_1680, 6, block_perGPU, thread_perBlock,105000);
 	}
 	if(gpu_count>=7)
 	{
-		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_160, null_kernel_2560, 7, block_perGPU, thread_perBlock,160000);
+		// REMOVED PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_160, null_kernel_2560, 7, block_perGPU, thread_perBlock,160000);
 	}
 	if(gpu_count>=8)
 	{
-		PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_200, null_kernel_3200, 8, block_perGPU, thread_perBlock,200000);
+		// REMOVED PACKED_SLEEP_TEST(multi_cooperative_launch, null_kernel_200, null_kernel_3200, 8, block_perGPU, thread_perBlock,200000);
 	}
 
 
