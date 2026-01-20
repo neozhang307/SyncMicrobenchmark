@@ -3,7 +3,7 @@ CODEFLAG=-gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_90,code=sm_90
 GCCFLAG=-lcudart -L/usr/local/cuda/lib64 -I/usr/local/cuda/include
 OMPFLAG=-Xcompiler -fopenmp
 
-EXECUTABLES=bench_stream_capture bench_while_conditional bench_child_graph bench_empty_node bench_event_node bench_device_launch bench_graph_upload
+EXECUTABLES=bench_stream_capture bench_while_conditional bench_child_graph bench_empty_node bench_event_node bench_device_launch bench_graph_upload bench_graph_server
 
 all: $(EXECUTABLES)
 
@@ -34,6 +34,9 @@ CudaGraph_DeviceLaunch.o: CudaGraph_DeviceLaunch.cu CudaGraph_Kernel.cuh
 CudaGraph_GraphUpload.o: CudaGraph_GraphUpload.cu CudaGraph_Kernel.cuh
 	nvcc -x cu $(CODEFLAG) -rdc=true -dc -o $@ $<
 
+CudaGraph_GraphServer.o: CudaGraph_GraphServer.cu CudaGraph_Kernel.cuh
+	nvcc -x cu $(CODEFLAG) -rdc=true -dc -o $@ $<
+
 bench_stream_capture: CudaGraph_StreamCapture.o CudaGraph_Kernels.o ../../share/util.o
 	nvcc $(CODEFLAG) -rdc=true $(OMPFLAG) -o $@ $^
 
@@ -54,6 +57,9 @@ bench_device_launch: CudaGraph_DeviceLaunch.o CudaGraph_Kernels.o ../../share/ut
 
 bench_graph_upload: CudaGraph_GraphUpload.o CudaGraph_Kernels.o ../../share/util.o
 	nvcc $(CODEFLAG) -rdc=true $(OMPFLAG) -lcublas -lcurand -o $@ $^
+
+bench_graph_server: CudaGraph_GraphServer.o CudaGraph_Kernels.o ../../share/util.o
+	nvcc $(CODEFLAG) -rdc=true $(OMPFLAG) -o $@ $^
 
 clean:
 	rm -f *.o $(EXECUTABLES)
